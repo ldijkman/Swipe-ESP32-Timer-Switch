@@ -1,6 +1,16 @@
 # Swipe-ESP32-Timer-Switch
 Swipe ESP32 Timer Switch
 
+Swipe 24/7 Circular TimeSlots Timer
+
+The Art of Time Controlled 
+
+Multi-Timer Edition
+
+circle schedule timeslots
+
+
+
 
 https://codepen.io/ldijkman/pen/pvyQWOz
 
