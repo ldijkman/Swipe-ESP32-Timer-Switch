@@ -7,4 +7,4 @@ https://codepen.io/ldijkman/pen/pvyQWOz
 ordered 2x
 Sonoff Basic R4 ESP32-C3
 
-ordered ftdi and a flashclip
+ordered ftdi and a 4 pin flashclip
