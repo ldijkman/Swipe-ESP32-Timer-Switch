@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Swipe 24/7 Circular TimeSlots Timer - Multi-Timer</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+* { box-sizing: border-box; }
+body { margin: 0; background: #111827; color: #eee; font-family: sans-serif; padding: 15px; max-width: 600px; margin: 0 auto; }
+h1 { font-size: 18px; margin: 0 0 5px; text-align: center; }
+.tagline { text-align: center; font-size: 14px; font-style: italic; color: #06b6d4; margin: 0 0 15px; letter-spacing: 0.5px; }
+.timer-tabs-container { margin-bottom: 15px; background: #1f2937; border-radius: 8px; padding: 10px; }
+.timer-tabs-scroll { display: flex; overflow-x: auto; gap: 6px; padding: 4px 0; scrollbar-width: none; margin-bottom: 10px; }
+.timer-tabs-scroll::-webkit-scrollbar { display: none; }
+.timer-tab { padding: 8px 16px; background: #374151; border-radius: 6px; cursor: pointer; white-space: nowrap; flex-shrink: 0; font-size: 14px; transition: background .2s, color .2s, border .2s; position: relative; display: flex; align-items: center; gap: 8px; border: 2px solid transparent; }
+.timer-tab.active { background: #06b6d4; color: #111; font-weight: bold; }
+.timer-tab.slot-active { border-color: #f59e0b; box-shadow: 0 0 8px rgba(245, 158, 11, 0.6); }
+.timer-tab:hover:not(.active) { background: #4b5563; }
+.reorder-btn { display: none; background: rgba(0, 0, 0, 0.2); border: none; color: inherit; cursor: pointer; padding: 2px 4px; border-radius: 3px; font-size: 10px; line-height: 1; transition: background .2s; align-items: center; justify-content: center; }
+.timer-tabs-container.expanded .reorder-btn { display: flex; }
+.reorder-btn:hover { background: rgba(0, 0, 0, 0.4); }
+.reorder-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.timer-tab.active .reorder-btn:hover:not(:disabled) { background: rgba(0, 0, 0, 0.3); }
+.timer-tab-actions { display: flex; justify-content: center; gap: 8px; max-height: 0; overflow: hidden; opacity: 0; transition: max-height 0.3s ease, opacity 0.3s ease, margin 0.3s ease; }
+.timer-tab-actions.expanded { max-height: 50px; opacity: 1; margin-top: 10px; }
+.timer-tab-action-btn { padding: 6px 14px; background: #10b981; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 13px; transition: background .2s; }
+.timer-tab-action-btn:hover { background: #059669; }
+.timer-tab-action-btn.secondary { background: #06b6d4; }
+.timer-tab-action-btn.secondary:hover { background: #0891b2; }
+.timer-tab-action-btn.delete { background: #dc2626; }
+.timer-tab-action-btn.delete:hover { background: #b91c1c; }
+.timer-expand-btn { display: flex; justify-content: center; margin-top: 8px; }
+.chevron-btn { background: #374151; color: #06b6d4; border: none; border-radius: 50%; width: 12px; height: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .2s, transform .3s ease; font-size: 12px; }
+.chevron-btn:hover { background: #4b5563; }
+.chevron-btn.expanded { transform: rotate(180deg); }
+.day-navigation { display: flex; align-items: center; justify-content: center; margin-bottom: 10px; gap: 8px; }
+.nav-btn { background: #374151; color: #eee; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; transition: background .2s; }
+.nav-btn:hover { background: #4b5563; }
+.day-slider { display: flex; overflow-x: auto; gap: 6px; padding: 8px 0; scrollbar-width: none; }
+.day-slider::-webkit-scrollbar { display: none; }
+.day-tab { padding: 6px 10px; background: #374151; border-radius: 6px; cursor: pointer; white-space: nowrap; flex-shrink: 0; font-size: 14px; transition: background .2s, color .2s, border .2s, box-shadow .2s; border: 2px solid transparent; }
+.day-tab.active { background: #06b6d4; color: #111; font-weight: bold; }
+.day-tab.today { color: #047857; font-weight: bold; }
+.day-tab.slot-active { border-color: #f59e0b; box-shadow: 0 0 8px rgba(245, 158, 11, 0.6); }
+.day-tab:hover { background: #4b5563; }
+.current-day-indicator { text-align: center; margin-bottom: 8px; font-size: 13px; color: #fbbf24; }
+.manual-status-display { text-align: center; margin-bottom: 10px; padding: 10px; background: #1f2937; border-radius: 8px; min-height: 50px; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 4px; }
+.manual-status-display.active { background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: 2px solid #34d399; animation: pulse 2s ease-in-out infinite; }
+@keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, .7); } 50% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); } }
+.manual-status-display.inactive { background: #374151; color: #9ca3af; }
+.manual-status-title { font-size: 16px; font-weight: bold; color: white; }
+.manual-status-time { font-size: 14px; color: #fbbf24; }
+.canvas-area { position: relative; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; max-width: 400px; }
+.canvas-container-outer { position: relative; width: 300px; height: 300px; border-radius: 50%; overflow: visible; }
+.am-pm-label { position: absolute; font-size: 11px; font-weight: bold; color: #06b6d4; user-select: none; z-index: 10; pointer-events: none; }
+.am-pm-label.top-left { top: 8px; left: 8px; }
+.am-pm-label.top-right { top: 8px; right: 8px; }
+.am-pm-label.bottom-left { bottom: 8px; left: 8px; }
+.am-pm-label.bottom-right { bottom: 8px; right: 8px; }
+.canvas-wrapper { display: flex; width: 100%; height: 100%; overflow-x: scroll; overflow-y: hidden; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none; background: transparent; border-radius: 50%; }
+.canvas-wrapper::-webkit-scrollbar { display: none; }
+.day-canvas-item { flex-shrink: 0; width: 300px; height: 300px; display: flex; justify-content: center; align-items: center; scroll-snap-align: center; position: relative; }
+.day-canvas-item canvas { width: 300px; height: 300px; border-radius: 50%; display: block; }
+.circle-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; height: 100%; pointer-events: none; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+.time { font-size: 18px; font-weight: bold; color: #06b6d4; text-align: center; }
+.dateInfo { font-size: 11px; color: #fbbf24; text-align: center; line-height: 1.3; margin-top: 4px; }
+.moon { font-size: 32px; margin-bottom: 2px; }
+.moonText { font-size: 11px; color: #fbbf24; }
+#sunTimes { margin-top: 6px; text-align: center; font-size: 13px; color: #fbbf24; }
+#geoMsg { margin-top: 4px; text-align: center; font-size: 12px; color: #ef4444; }
+.next-state-display { margin-top: 8px; margin-bottom: 8px; text-align: center; font-size: 13px; color: #fbbf24; padding: 8px; background: #1f2937; border-radius: 6px; min-height: 36px; display: flex; align-items: center; justify-content: center; }
+.next-state-display.active-now { color: #10b981; font-weight: bold; }
+.next-state-display.inactive-now { color: #ef4444; }
+.file-operations { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
+.file-operations .form-row { width: 100%; display: flex; align-items: center; gap: 10px; }
+.file-operations .form-row label { min-width: 80px; }
+.file-operations .form-row input[type="text"] { flex: 1; padding: 8px; background: #374151; border: 1px solid #4b5563; border-radius: 6px; color: #eee; font-size: 14px; }
+.file-operations .form-row input[type="text"]:focus { outline: none; border-color: #06b6d4; }
+.file-operations .btn { flex: 1; min-width: 120px; }
+#fileInput { display: none; }
+.info-btn { background: #06b6d4; color: #111; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 14px; font-weight: bold; display: inline-flex; align-items: center; justify-content: center; transition: background .2s; flex-shrink: 0; }
+.info-btn:hover { background: #0891b2; }
+.info-popup { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1f2937; border: 2px solid #06b6d4; border-radius: 12px; padding: 20px; max-width: 400px; width: 90%; z-index: 1000; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5); max-height: 80vh; overflow-y: auto; }
+.info-popup.show { display: block; }
+.info-popup-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); z-index: 999; }
+.info-popup-overlay.show { display: block; }
+.info-popup h4 { margin: 0 0 15px 0; color: #06b6d4; font-size: 18px; }
+.info-popup ul { margin: 10px 0; padding-left: 20px; color: #eee; line-height: 1.8; }
+.info-popup li { margin-bottom: 8px; }
+.info-popup code { background: #374151; padding: 2px 6px; border-radius: 3px; color: #fbbf24; font-family: monospace; }
+.info-popup-close { background: #06b6d4; color: #111; border: none; border-radius: 6px; padding: 8px 20px; cursor: pointer; font-weight: bold; margin-top: 15px; width: 100%; font-size: 14px; transition: background .2s; }
+.info-popup-close:hover { background: #0891b2; }
+.info-popup input[type="text"] { width: 100%; padding: 8px; background: #374151; border: 1px solid #4b5563; border-radius: 6px; color: #eee; font-size: 14px; margin-bottom: 10px; }
+.info-popup input[type="text"]:focus { outline: none; border-color: #06b6d4; }
+.info-popup label { display: block; color: #fbbf24; font-size: 13px; margin-top: 10px; margin-bottom: 5px; }
+.url-status { font-size: 11px; color: #10b981; margin-top: 4px; }
+.url-status.error { color: #ef4444; }
+.paypal-footer { text-align: center; margin-top: 20px; padding: 15px; background: #1f2937; border-radius: 8px; border: 1px solid #374151; }
+.paypal-footer p { margin: 0 0 10px 0; font-size: 14px; color: #9ca3af; }
+.paypal-link { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; background: #0070ba; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 14px; transition: background 0.3s ease; }
+.paypal-link:hover { background: #005ea6; }
+.paypal-icon { font-size: 18px; }
+.claude-footer { text-align: center; margin-top: 20px; padding: 12px; background: linear-gradient(135deg, #2d1810 0%, #3d2418 100%); border-radius: 8px; border: 1px solid #CC9B7A; }
+.claude-footer p { margin: 0; font-size: 14px; color: #d1d5db; }
+.claude-link { display: inline-flex; align-items: center; gap: 6px; color: #CC9B7A; text-decoration: none; font-weight: bold; transition: color 0.2s; }
+.claude-link:hover { color: #E6B89C; }
+.claude-icon { width: 18px; height: 18px; vertical-align: middle; }
+.locked-message { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #ef4444; color: white; padding: 20px 30px; border-radius: 8px; font-size: 16px; font-weight: bold; z-index: 1000; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5); animation: fadeInOut 2s ease-in-out forwards; pointer-events: none; }
+@keyframes fadeInOut { 0% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); } 10% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 90% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); } }
+.log-section { margin-top: 20px; padding: 15px; background: #1f2937; border-radius: 8px; border: 1px solid #374151; }
+.log-section h3 { margin: 0 0 8px; font-size: 15px; color: #fbbf24; }
+.log-window { background: #0f172a; border: 1px solid #374151; border-radius: 6px; padding: 10px; max-height: 250px; overflow-y: auto; font-family: 'Courier New', monospace; font-size: 12px; }
+.log-window::-webkit-scrollbar { width: 8px; }
+.log-window::-webkit-scrollbar-track { background: #1e293b; border-radius: 4px; }
+.log-window::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+.log-window::-webkit-scrollbar-thumb:hover { background: #64748b; }
+.log-entry { padding: 6px 0; border-bottom: 1px solid #1e293b; }
+.log-entry:last-child { border-bottom: none; }
+.log-timestamp { color: #94a3b8; font-size: 11px; }
+.log-timer { color: #06b6d4; font-weight: bold; }
+.log-action { color: #fbbf24; }
+.log-action.on { color: #10b981; }
+.log-action.off { color: #ef4444; }
+.log-url { color: #9ca3af; word-break: break-all; }
+.log-status { font-size: 11px; margin-top: 2px; }
+.log-status.success { color: #10b981; }
+.log-status.error { color: #ef4444; }
+.log-empty { color: #6b7280; text-align: center; padding: 20px; font-style: italic; }
+.log-clear-btn { padding: 4px 12px; background: #374151; color: #eee; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; transition: background .2s; }
+.log-clear-btn:hover { background: #4b5563; }
+form, .sun-form, .manual-form { margin-top: 10px; padding: 10px; background: #1f2937; border-radius: 8px; }
+form h3, .sun-form h3, .manual-form h3 { margin: 0 0 8px; font-size: 15px; color: #fbbf24; text-align: center; }
+.form-row, .sun-form-row, .manual-form-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; align-items: center; }
+.manual-form-status { text-align: center; padding: 8px; margin: 8px 0; border-radius: 5px; font-size: 13px; background: #374151; color: #9ca3af; }
+.manual-form-status.active { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; font-weight: bold; }
+.form-row label, .sun-form-row label, .manual-form-row label { flex: 0 0 80px; font-size: 13px; }
+input[type=time], select { flex: 1; padding: 5px; border-radius: 5px; border: none; background: #374151; color: #eee; font-size: 13px; }
+.addBtn { width: 100%; max-width: 120px; margin: 5px auto 0; padding: 6px; border-radius: 5px; border: none; background: #06b6d4; color: #111; cursor: pointer; font-size: 13px; display: block; transition: background .2s; }
+.addBtn:hover { background: #0891b2; }
+.daysContainer { display: flex; gap: 10px; margin: 6px 0; justify-content: center; }
+.dayBtn { width: 24px; height: 24px; border-radius: 4px; border: none; cursor: pointer; font-size: 12px; font-weight: bold; display: flex; align-items: center; justify-content: center; transition: background .2s; }
+.dayBtn.on { background: #10b981; color: white; }
+.dayBtn.off { background: #6b7280; color: #9ca3af; }
+.dayBtn:hover { opacity: .9; }
+.timeslots-header { margin-top: 25px; margin-bottom: 10px; text-align: center; }
+.timeslots-header h2 { font-size: 20px; color: #fbbf24; margin: 0; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+ul { list-style: none; padding: 0; margin-top: 10px; }
+li { display: flex; justify-content: space-between; align-items: center; padding: 8px; margin-bottom: 6px; background: #1f2937; border-radius: 6px; flex-wrap: wrap; gap: 6px; }
+.slotInfo { display: flex; flex-direction: column; flex: 1; }
+.sun-based-indicator { color: #fbbf24; font-size: 11px; margin-top: 2px; }
+.slot-state-indicator { color: #10b981; font-size: 11px; margin-top: 2px; font-weight: bold; }
+.slot-state-indicator.inactive { color: #ef4444; }
+.slot-state-indicator.manual-override { color: #8b5cf6; }
+.controls { display: flex; gap: 4px; flex-wrap: wrap; }
+.btn { padding: 5px 8px; border-radius: 4px; border: none; cursor: pointer; font-size: 12px; transition: background .2s; }
+.delBtn { background: #ef4444; color: white; }
+.editBtn { background: #f59e0b; color: white; }
+.toggleBtn { background: #06b6d4; color: #111; }
+.btn:hover { opacity: .9; }
+.export-section { margin-top: 15px; padding: 10px; background: #1f2937; border-radius: 8px; }
+.export-buttons { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.export-btn { padding: 6px 12px; border-radius: 5px; border: none; background: #10b981; color: white; cursor: pointer; }
+.import-btn { padding: 6px 12px; border-radius: 5px; border: none; background: #f59e0b; color: white; cursor: pointer; }
+#jsonData { width: 100%; height: 80px; margin-top: 8px; background: #374151; color: #eee; border: none; border-radius: 5px; padding: 6px; font-size: 12px; }
+.location-btn { display: block; margin: 8px auto; padding: 6px 12px; border-radius: 5px; border: none; background: #8b5cf6; color: white; cursor: pointer; font-size: 13px; }
+.location-btn:hover { background: #7c3aed; }
+footer { margin-top: 20px; text-align: center; font-size: 11px; color: #6b7280; }
+footer a { display: inline-flex; align-items: center; gap: 6px; color: #06b6d4; text-decoration: none; transition: color 0.2s; }
+footer a:hover { color: #0891b2; }
+footer .social-icon { font-size: 18px; vertical-align: middle; }
+@media (max-width: 400px) { .canvas-container-outer { width: 280px; height: 280px; } .day-canvas-item, .day-canvas-item canvas { width: 280px; height: 280px; } .form-row label, .sun-form-row label, .manual-form-row label { flex: 0 0 70px; font-size: 12px; } input[type=time], select { font-size: 12px; } .dayBtn { width: 22px; height: 22px; font-size: 11px; } }
+.time-format-toggle { margin-top: 10px; text-align: center; color: #06b6d4; font-size: 14px; display: flex; justify-content: center; align-items: center; gap: 8px; }
+.switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #555; border-radius: 24px; transition: .3s; }
+.slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: .3s; }
+input:checked + .slider { background: #06b6d4; }
+input:checked + .slider:before { transform: translateX(20px); }
+</style>
+</head>
+<body>
+
+<h1>Swipe 24/7 Circular TimeSlots Timer</h1>
+<p class="tagline">ultimate swipe 24/7 timer, easy set/overview</p>
+
+<div class="timer-tabs-container">
+  <div class="timer-tabs-scroll" id="timerTabs"></div>
+  <div class="timer-expand-btn">
+    <button class="chevron-btn" id="timerExpandBtn">▼</button>
+  </div>
+  <div class="timer-tab-actions" id="timerTabActions">
+    <button class="timer-tab-action-btn" id="addTimerBtn">➕ Add Timer</button>
+    <button class="timer-tab-action-btn secondary" id="editTimerBtn">✏️ Edit</button>
+    <button class="timer-tab-action-btn delete" id="deleteTimerBtn">🗑️ Delete</button>
+    <button class="timer-tab-action-btn secondary" id="closeTimerActionsBtn">✖ Close</button>
+  </div>
+</div>
+
+<div class="day-navigation">
+  <button class="nav-btn" id="prevDay">←</button>
+  <div class="day-slider" id="daySlider"></div>
+  <button class="nav-btn" id="nextDay">→</button>
+</div>
+
+<div class="current-day-indicator" id="currentDayIndicator"></div>
+
+<div class="manual-status-display" id="manualStatusDisplay">
+  <div class="manual-status-inactive">Manual Mode: OFF</div>
+</div>
+
+<div class="canvas-area">
+  <div class="canvas-container-outer">
+    <div class="am-pm-label top-left" id="amPmTopLeft">PM</div>
+    <div class="am-pm-label top-right" id="amPmTopRight">AM</div>
+    <div class="am-pm-label bottom-left" id="amPmBottomLeft">PM</div>
+    <div class="am-pm-label bottom-right" id="amPmBottomRight">AM</div>
+    
+    <div class="canvas-wrapper" id="canvasWrapper"></div>
+
+    <div class="circle-overlay">
+      <div class="moon" id="moonIcon">🌕</div>
+      <div class="moonText" id="moonText">Full Moon</div>
+      <div class="time" id="centerTime">--:--</div>
+      <div class="dateInfo" id="dateInfo">--</div>
+    </div>
+  </div>
+</div>
+
+<div id="nextStateChange" class="next-state-display">--</div>
+  
+<div class="time-format-toggle">
+  <span>12-hour</span>
+  <label class="switch">
+    <input type="checkbox" id="timeFormatToggle">
+    <span class="slider"></span>
+  </label>
+  <span>24-hour</span>
+</div>
+  
+<div id="sunTimes">Sunrise: --:-- | Sunset: --:--</div>
+<div id="geoMsg"></div>
+
+<button class="location-btn" id="getLocationBtn">Use My Location</button>
+
+<div class="sun-form">
+  <h3>Sun-Based Time Slot</h3>
+  <div class="sun-form-row">
+    <label for="sunEvent">Event:</label>
+    <select id="sunEvent">
+      <option value="sunrise">Sunrise</option>
+      <option value="sunset">Sunset</option>
+    </select>
+  </div>
+  <div class="sun-form-row">
+    <label for="sunOffset">Offset:</label>
+    <select id="sunOffset">
+      <option value="-120">2 hours before</option>
+      <option value="-90">1.5 hours before</option>
+      <option value="-60">1 hour before</option>
+      <option value="-45">45 min before</option>
+      <option value="-30">30 min before</option>
+      <option value="-15">15 min before</option>
+      <option value="0">Exact</option>
+      <option value="15">15 min after</option>
+      <option value="30">30 min after</option>
+      <option value="45">45 min after</option>
+      <option value="60">1 hour after</option>
+      <option value="90">1.5 hours after</option>
+      <option value="120">2 hours after</option>
+    </select>
+  </div>
+  <div class="sun-form-row">
+    <label for="sunDuration">Duration:</label>
+    <select id="sunDuration">
+      <option value="15">15 minutes</option>
+      <option value="30">30 minutes</option>
+      <option value="45">45 minutes</option>
+      <option value="60">1 hour</option>
+      <option value="90">1.5 hours</option>
+      <option value="120">2 hours</option>
+      <option value="180">3 hours</option>
+      <option value="240">4 hours</option>
+    </select>
+  </div>
+  <div class="daysContainer" id="sunDays"></div>
+  <button type="button" class="addBtn" id="addSunSlot">Add Slot</button>
+</div>
+
+<form id="addForm">
+  <h3>Fixed Time Slot</h3>
+  <div class="form-row">
+    <label for="startTime">Start:</label>
+    <input type="time" id="startTime" required>
+  </div>
+  <div class="form-row">
+    <label for="endTime">End:</label>
+    <input type="time" id="endTime" required>
+  </div>
+  <div class="daysContainer" id="fixedDays"></div>
+  <button type="submit" class="addBtn">Add Slot</button>
+</form>
+
+<div class="manual-form">
+  <h3>Manual Control</h3>
+  <div class="manual-form-row">
+    <label for="manualDuration">Duration:</label>
+    <select id="manualDuration">
+      <option value="15">15 minutes</option>
+      <option value="30">30 minutes</option>
+      <option value="45">45 minutes</option>
+      <option value="60">1 hour</option>
+      <option value="90">1.5 hours</option>
+      <option value="120">2 hours</option>
+      <option value="180">3 hours</option>
+      <option value="240">4 hours</option>
+    </select>
+  </div>
+  <div id="manualFormStatus" class="manual-form-status">Manual Mode: OFF</div>
+  <div class="manual-form-row">
+    <button type="button" class="btn manual-on-btn" id="manualOnBtn">Start Manual ON</button>
+    <button type="button" class="btn manual-off-btn" id="manualOffBtn">Stop Manual OFF</button>
+  </div>
+</div>
+
+<div class="timeslots-header">
+  <h2>TimeSlots</h2>
+</div>
+
+<ul id="slotList"></ul>
+
+<div class="file-operations">
+  <div class="form-row">
+    <label for="filenameInput">Filename:</label>
+    <input type="text" id="filenameInput" placeholder="timeslots" style="flex: 1;">
+    <button class="info-btn" id="filenameInfoBtn" type="button">i</button>
+  </div>
+  <button class="btn" id="saveFileBtn">💾 Save to File</button>
+  <button class="btn" id="loadFileBtn">📂 Load from File</button>
+  <input type="file" id="fileInput" accept=".json">
+</div>
+
+<div class="info-popup-overlay" id="infoPopupOverlay"></div>
+<div class="info-popup" id="infoPopup">
+  <h4>Filename Examples</h4>
+  <ul>
+    <li>Type <code>garden-lights</code> → saves as <code>garden-lights.json</code></li>
+    <li>Type <code>office-schedule.json</code> → saves as <code>office-schedule.json</code></li>
+    <li>Leave empty → saves as <code>timeslots-2025-11-25.json</code></li>
+  </ul>
+  <button class="info-popup-close" id="infoPopupClose">Close</button>
+</div>
+
+<div class="info-popup" id="renamePopup">
+  <h4>Edit Timer Settings</h4>
+  <label>Timer Name</label>
+  <input type="text" id="renameInput" placeholder="Enter timer name">
+  
+  <label>ON URL (called when slot activates)</label>
+  <div style="display: flex; gap: 5px; margin-bottom: 10px;">
+    <input type="text" id="onUrlInput" placeholder="http://192.168.1.100/on" style="flex: 1; margin: 0;">
+    <button class="info-popup-close" id="testOnUrlBtn" style="background: #10b981; margin: 0; padding: 8px 12px; width: auto;">Test ON</button>
+  </div>
+  
+  <label>OFF URL (called when slot deactivates)</label>
+  <div style="display: flex; gap: 5px; margin-bottom: 10px;">
+    <input type="text" id="offUrlInput" placeholder="http://192.168.1.100/off" style="flex: 1; margin: 0;">
+    <button class="info-popup-close" id="testOffUrlBtn" style="background: #ef4444; margin: 0; padding: 8px 12px; width: auto;">Test OFF</button>
+  </div>
+  
+  <div id="urlTestStatus" class="url-status" style="display:none;"></div>
+  
+  <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #4b5563;">
+    <label>Copy Schedule From Another Timer</label>
+    <select id="copyScheduleSelect" style="width: 100%; padding: 8px; background: #374151; border: 1px solid #4b5563; border-radius: 6px; color: #eee; font-size: 14px; margin-top: 5px; margin-bottom: 8px;">
+      <option value="">-- Select a timer to copy from --</option>
+    </select>
+    <button class="info-popup-close" id="copyScheduleBtn" style="background: #8b5cf6; margin-bottom: 10px;" disabled>Copy Schedule</button>
+    <div id="copyScheduleStatus" style="display:none; padding: 8px; border-radius: 6px; margin-bottom: 10px; text-align: center; font-size: 13px;"></div>
+  </div>
+  
+  <button class="info-popup-close" id="renameConfirmBtn">Save Settings</button>
+  <button class="info-popup-close" id="renameCancelBtn" style="background: #6b7280; margin-top: 5px;">Cancel</button>
+</div>
+
+<div class="export-section">
+  <h3>Export/Import</h3>
+  <div class="export-buttons">
+    <button class="export-btn" id="exportBtn">Export JSON</button>
+    <button class="import-btn" id="importBtn">Import JSON</button>
+  </div>
+  <textarea id="jsonData" placeholder="JSON data..." style="display:none;"></textarea>
+</div>
+
+<div class="log-section">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+    <h3 style="margin: 0;">URL Call Log</h3>
+    <button class="log-clear-btn" id="clearLogBtn">Clear Log</button>
+  </div>
+  <div id="logWindow" class="log-window"></div>
+</div>
+
+<footer>
+  <p>Copyright 2025<br>Dirk Luberth Dijkman – Andijk, Netherlands</p>
+  <p>For daily/weekly schedule for irrigation or lighting</p>
+  <a href="https://m.facebook.com/luberth.dijkman/" target="_blank">
+    <span class="social-icon">📘</span>Facebook
+  </a><br>
+  <a href="https://codepen.io/ldijkman/pens/public" target="_blank">
+    <img src="https://public.codepenassets.com/favicon/favicon.ico" alt="CodePen" style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px;"> CodePen
+  </a><br>
+  <a href="https://plnkr.co/users/l_dijkman/plunks" target="_blank" rel="noopener noreferrer">
+    <img src="https://plnkr.co/favicon.ico" alt="Plunker" style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px;">Plunkr
+  </a>
+</footer>
+
+<script>
+"use strict";
+const CANVAS_WIDTH = 300;
+const CANVAS_HEIGHT = 300;
+const RADIUS = CANVAS_WIDTH / 2 - 25;
+const CENTER_X = CANVAS_WIDTH / 2;
+const CENTER_Y = CANVAS_HEIGHT / 2;
+const STORAGE_KEY = "dagcirkel_multitimer_v2_fixed";
+const ACTIVE_TIMER_KEY = "dagcirkel_active_timer_v2";
+const dayLetters = ["M", "T", "W", "T", "F", "S", "S"];
+const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+let timers = [];
+let activeTimerId = null;
+let slots = [];
+let sunrise = "07:00";
+let sunset = "19:00";
+let currentViewDay = new Date().getDay();
+let manualTimer = null;
+let isAnimating = false;
+let scrollTimeout = null;
+let saveTimeout = null;
+let is24HourFormat = false;
+let renameTimerId = null;
+let timerSlotStates = new Map(); // Map of timer ID to Map of slot states
+const canvasWrapper = document.getElementById("canvasWrapper");
+const daySlider = document.getElementById("daySlider");
+const currentDayIndicator = document.getElementById("currentDayIndicator");
+const sunTimesEl = document.getElementById("sunTimes");
+const geoMsgEl = document.getElementById("geoMsg");
+const moonIconEl = document.getElementById("moonIcon");
+const moonTextEl = document.getElementById("moonText");
+const centerTimeEl = document.getElementById("centerTime");
+const dateInfoEl = document.getElementById("dateInfo");
+const manualStatusDisplay = document.getElementById("manualStatusDisplay");
+const slotListEl = document.getElementById("slotList");
+const jsonDataEl = document.getElementById("jsonData");
+const timeFormatToggle = document.getElementById("timeFormatToggle");
+const nextStateChangeEl = document.getElementById("nextStateChange");
+const manualFormStatus = document.getElementById("manualFormStatus");
+const timerTabsEl = document.getElementById("timerTabs");
+const amPmLabels = [document.getElementById("amPmTopLeft"),document.getElementById("amPmTopRight"),document.getElementById("amPmBottomLeft"),document.getElementById("amPmBottomRight")];
+const DAY_ANIMATION_DURATION = 450;
+const TimeUtils = {toMin(t){const [h,m]=t.split(":").map(Number);return h*60+m;},toHHMM(m){const h=Math.floor(m/60).toString().padStart(2,"0");const mn=(m%60).toString().padStart(2,"0");return `${h}:${mn}`;},to12(t){const [h,m]=t.split(":").map(Number);const p=h>=12?"PM":"AM";const h12=h%12||12;return `${h12}:${m.toString().padStart(2,"0")} ${p}`;},formatTime(t){return is24HourFormat?t:this.to12(t);},toLocalHHMM(date){return date.getHours().toString().padStart(2,"0")+":"+date.getMinutes().toString().padStart(2,"0");},isInSlot(nowMin,slot){const s=this.toMin(slot.start);const e=this.toMin(slot.end);if(s<e)return nowMin>=s&&nowMin<e;return nowMin>=s||nowMin<e;},isoWeek(date){const t=new Date(date);t.setHours(0,0,0,0);t.setDate(t.getDate()+3-((t.getDay()+6)%7));const w1=new Date(t.getFullYear(),0,4);return 1+Math.round(((t-w1)/86400000-3+((w1.getDay()+6)%7))/7);}};
+function jsDayToSlotIndex(jsDay){return jsDay===0?6:jsDay-1;}
+function slotIndexToName(idx){return dayNames[idx];}
+
+const Logger = {
+  maxEntries: 100,
+  
+  addEntry(timerName, action, url, success = true, error = null) {
+    const logWindow = document.getElementById('logWindow');
+    const now = new Date();
+    const timestamp = now.toLocaleString('en-US', { 
+      month: '2-digit', 
+      day: '2-digit', 
+      hour: '2-digit', 
+      minute: '2-digit', 
+      second: '2-digit',
+      hour12: false 
+    });
+    
+    const entry = document.createElement('div');
+    entry.className = 'log-entry';
+    
+    const actionClass = action === 'ON' ? 'on' : 'off';
+    const statusClass = success ? 'success' : 'error';
+    const statusText = success ? '✓ Success' : `✗ Error: ${error || 'Unknown error'}`;
+    
+    entry.innerHTML = `
+      <div><span class="log-timestamp">${timestamp}</span> | <span class="log-timer">${timerName}</span> | <span class="log-action ${actionClass}">${action}</span></div>
+      <div class="log-url">${url}</div>
+      <div class="log-status ${statusClass}">${statusText}</div>
+    `;
+    
+    // Remove empty message if exists
+    const emptyMsg = logWindow.querySelector('.log-empty');
+    if (emptyMsg) {
+      emptyMsg.remove();
+    }
+    
+    // Add new entry at the top
+    logWindow.insertBefore(entry, logWindow.firstChild);
+    
+    // Limit entries
+    const entries = logWindow.querySelectorAll('.log-entry');
+    if (entries.length > this.maxEntries) {
+      entries[entries.length - 1].remove();
+    }
+    
+    // Save to localStorage
+    this.saveToStorage();
+  },
+  
+  clear() {
+    const logWindow = document.getElementById('logWindow');
+    logWindow.innerHTML = '<div class="log-empty">No URL calls logged yet</div>';
+    localStorage.removeItem('urlCallLog');
+  },
+  
+  saveToStorage() {
+    const logWindow = document.getElementById('logWindow');
+    const entries = Array.from(logWindow.querySelectorAll('.log-entry')).map(entry => entry.outerHTML);
+    localStorage.setItem('urlCallLog', JSON.stringify(entries));
+  },
+  
+  loadFromStorage() {
+    const stored = localStorage.getItem('urlCallLog');
+    const logWindow = document.getElementById('logWindow');
+    
+    if (stored) {
+      try {
+        const entries = JSON.parse(stored);
+        if (entries.length > 0) {
+          logWindow.innerHTML = entries.join('');
+        } else {
+          logWindow.innerHTML = '<div class="log-empty">No URL calls logged yet</div>';
+        }
+      } catch (e) {
+        logWindow.innerHTML = '<div class="log-empty">No URL calls logged yet</div>';
+      }
+    } else {
+      logWindow.innerHTML = '<div class="log-empty">No URL calls logged yet</div>';
+    }
+  }
+};
+
+const URLController = {
+  async callUrl(url, type, timerName = null) {
+    if (!url || url.trim() === '') return;
+    
+    // If timerName not provided, get it from active timer
+    if (!timerName) {
+      const timer = timers.find(t => t.id === activeTimerId);
+      timerName = timer ? timer.name : 'Unknown Timer';
+    }
+    
+    try {
+      console.log(`Calling ${type} URL:`, url);
+      const response = await fetch(url, {
+        method: 'GET',
+        mode: 'no-cors',
+        cache: 'no-cache'
+      });
+      console.log(`${type} URL called successfully`);
+      Logger.addEntry(timerName, type, url, true);
+    } catch (error) {
+      console.error(`Error calling ${type} URL:`, error);
+      Logger.addEntry(timerName, type, url, false, error.message);
+    }
+  },
+  
+  async testOnUrl(url) {
+    const statusEl = document.getElementById('urlTestStatus');
+    statusEl.style.display = 'block';
+    
+    if (!url || url.trim() === '') {
+      statusEl.className = 'url-status error';
+      statusEl.textContent = '⚠️ ON URL is empty';
+      return;
+    }
+    
+    statusEl.className = 'url-status';
+    statusEl.textContent = '🔄 Testing ON URL...';
+    
+    try {
+      await fetch(url, { method: 'GET', mode: 'no-cors', cache: 'no-cache' });
+      statusEl.className = 'url-status';
+      statusEl.textContent = '✓ ON URL called successfully';
+      console.log('ON URL test:', url);
+    } catch (error) {
+      statusEl.className = 'url-status error';
+      statusEl.textContent = '✗ ON URL failed: ' + error.message;
+      console.error('ON URL test failed:', error);
+    }
+  },
+  
+  async testOffUrl(url) {
+    const statusEl = document.getElementById('urlTestStatus');
+    statusEl.style.display = 'block';
+    
+    if (!url || url.trim() === '') {
+      statusEl.className = 'url-status error';
+      statusEl.textContent = '⚠️ OFF URL is empty';
+      return;
+    }
+    
+    statusEl.className = 'url-status';
+    statusEl.textContent = '🔄 Testing OFF URL...';
+    
+    try {
+      await fetch(url, { method: 'GET', mode: 'no-cors', cache: 'no-cache' });
+      statusEl.className = 'url-status';
+      statusEl.textContent = '✓ OFF URL called successfully';
+      console.log('OFF URL test:', url);
+    } catch (error) {
+      statusEl.className = 'url-status error';
+      statusEl.textContent = '✗ OFF URL failed: ' + error.message;
+      console.error('OFF URL test failed:', error);
+    }
+  },
+  
+  async testUrls(onUrl, offUrl) {
+    const statusEl = document.getElementById('urlTestStatus');
+    statusEl.style.display = 'block';
+    statusEl.className = 'url-status';
+    statusEl.textContent = 'Testing URLs...';
+    
+    let results = [];
+    
+    if (onUrl && onUrl.trim()) {
+      try {
+        await fetch(onUrl, { method: 'GET', mode: 'no-cors', cache: 'no-cache' });
+        results.push('✓ ON URL called');
+      } catch (error) {
+        results.push('✗ ON URL failed: ' + error.message);
+      }
+    }
+    
+    if (offUrl && offUrl.trim()) {
+      try {
+        await fetch(offUrl, { method: 'GET', mode: 'no-cors', cache: 'no-cache' });
+        results.push('✓ OFF URL called');
+      } catch (error) {
+        results.push('✗ OFF URL failed: ' + error.message);
+      }
+    }
+    
+    if (results.length === 0) {
+      statusEl.className = 'url-status error';
+      statusEl.textContent = 'No URLs configured';
+    } else {
+      statusEl.textContent = results.join(' | ');
+    }
+  },
+  
+  checkSlotStateChanges() {
+    // Check ALL timers, not just the active one
+    timers.forEach(timer => {
+      if (!timer) return;
+      
+      // Get or create state map for this timer
+      if (!timerSlotStates.has(timer.id)) {
+        timerSlotStates.set(timer.id, new Map());
+      }
+      const lastSlotStates = timerSlotStates.get(timer.id);
+      
+      const now = new Date();
+      const todayJs = now.getDay();
+      const nowMin = now.getHours() * 60 + now.getMinutes();
+      
+      // Check manual mode
+      if (timer.manualMode) {
+        const wasManual = lastSlotStates.get('manual');
+        if (!wasManual) {
+          console.log(`[${timer.name}] Manual mode activated - calling ON URL`);
+          if (timer.onUrl) this.callUrl(timer.onUrl, 'ON', timer.name);
+          lastSlotStates.set('manual', true);
+        }
+        return;
+      } else {
+        if (lastSlotStates.get('manual')) {
+          console.log(`[${timer.name}] Manual mode deactivated - calling OFF URL`);
+          if (timer.offUrl) this.callUrl(timer.offUrl, 'OFF', timer.name);
+          lastSlotStates.delete('manual');
+        }
+      }
+      
+      let anySlotActive = false;
+      const timerSlots = timer.slots || [];
+      
+      timerSlots.forEach(slot => {
+        if (!slot.enabled || !isSlotActiveOnDay(slot, todayJs)) {
+          lastSlotStates.delete(slot.id);
+          return;
+        }
+        
+        const isActive = TimeUtils.isInSlot(nowMin, slot);
+        const wasActive = lastSlotStates.get(slot.id);
+        
+        if (isActive && !wasActive) {
+          console.log(`[${timer.name}] Slot ${slot.id} activated (${slot.start}-${slot.end}) - calling ON URL`);
+          if (timer.onUrl) this.callUrl(timer.onUrl, 'ON', timer.name);
+          lastSlotStates.set(slot.id, true);
+        } else if (!isActive && wasActive) {
+          console.log(`[${timer.name}] Slot ${slot.id} deactivated (${slot.start}-${slot.end}) - calling OFF URL`);
+          if (timer.offUrl) this.callUrl(timer.offUrl, 'OFF', timer.name);
+          lastSlotStates.delete(slot.id);
+        }
+        
+        if (isActive) anySlotActive = true;
+      });
+      
+      const wasAnyActive = lastSlotStates.get('anyActive');
+      if (!anySlotActive && wasAnyActive && !timer.manualMode) {
+        console.log(`[${timer.name}] All slots deactivated - ensuring OFF state`);
+        if (timer.offUrl) this.callUrl(timer.offUrl, 'OFF', timer.name);
+        lastSlotStates.set('anyActive', false);
+      } else if (anySlotActive && !wasAnyActive) {
+        lastSlotStates.set('anyActive', true);
+      }
+    });
+  }
+};
+
+const TimerManager={init(){const savedTimers=localStorage.getItem(STORAGE_KEY);const savedActive=localStorage.getItem(ACTIVE_TIMER_KEY);if(savedTimers){try{timers=JSON.parse(savedTimers);if(!Array.isArray(timers)||timers.length===0){this.createDefaultTimer();}else{timers=timers.map(t=>({...t,onUrl:t.onUrl||'',offUrl:t.offUrl||''}));}}catch(e){this.createDefaultTimer();}}else{this.createDefaultTimer();}if(savedActive&&timers.find(t=>t.id===savedActive)){activeTimerId=savedActive;}else{activeTimerId=timers[0].id;}this.loadActiveTimer();this.renderTabs();},createDefaultTimer(){timers=[{id:'timer-'+Date.now(),name:'Timer 1',onUrl:'',offUrl:'',slots:[{id:1,start:"06:00",end:"08:00",enabled:true,days:[true,true,true,true,true,true,true]},{id:2,start:"12:00",end:"13:30",enabled:true,days:[true,true,true,true,true,true,true]},{id:3,start:"19:00",end:"22:00",enabled:true,days:[true,true,true,true,true,true,true]}],manualMode:false,manualEndTime:null}];activeTimerId=timers[0].id;},save(){localStorage.setItem(STORAGE_KEY,JSON.stringify(timers));localStorage.setItem(ACTIVE_TIMER_KEY,activeTimerId);},saveDebounced(){clearTimeout(saveTimeout);saveTimeout=setTimeout(()=>this.save(),150);},addTimer(){const newId='timer-'+Date.now();const newTimer={id:newId,name:`Timer ${timers.length+1}`,onUrl:'',offUrl:'',slots:[],manualMode:false,manualEndTime:null};timers.push(newTimer);this.switchTimer(newId);this.save();this.renderTabs();},deleteTimer(timerId){if(timers.length<=1){alert('Cannot delete the last timer!');return;}if(confirm('Are you sure you want to delete this timer?')){timers=timers.filter(t=>t.id!==timerId);if(activeTimerId===timerId){activeTimerId=timers[0].id;this.loadActiveTimer();}this.save();this.renderTabs();renderList();renderCanvases();}},renameTimer(timerId,newName,onUrl,offUrl){const timer=timers.find(t=>t.id===timerId);if(timer){if(newName.trim()){timer.name=newName.trim();}timer.onUrl=onUrl||'';timer.offUrl=offUrl||'';this.save();this.renderTabs();}},moveTimer(timerId,direction){const currentIndex=timers.findIndex(t=>t.id===timerId);if(currentIndex===-1)return;const newIndex=direction==='up'?currentIndex-1:currentIndex+1;if(newIndex<0||newIndex>=timers.length)return;[timers[currentIndex],timers[newIndex]]=[timers[newIndex],timers[currentIndex]];this.save();this.renderTabs();const tabsScroll=document.getElementById('timerTabs');const activeTab=tabsScroll.querySelector('.timer-tab.active');if(activeTab){activeTab.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});}},switchTimer(timerId){this.saveActiveTimer();activeTimerId=timerId;this.loadActiveTimer();this.save();this.renderTabs();renderList();renderCanvases();updateNextStateChange();ManualControl.update();},saveActiveTimer(){const timer=timers.find(t=>t.id===activeTimerId);if(timer){timer.slots=slots;}},loadActiveTimer(){const timer=timers.find(t=>t.id===activeTimerId);if(timer){slots=timer.slots||[];if(timer.manualMode===undefined){timer.manualMode=false;timer.manualEndTime=null;}if(timer.onUrl===undefined){timer.onUrl='';}if(timer.offUrl===undefined){timer.offUrl='';}}},renderTabs(){timerTabsEl.innerHTML='';const now=new Date();const nowMin=now.getHours()*60+now.getMinutes();const todayJs=now.getDay();timers.forEach((timer,index)=>{const tab=document.createElement('div');tab.className='timer-tab'+(timer.id===activeTimerId?' active':'');let hasActiveSlot=false;if(timer.manualMode){hasActiveSlot=true;}else{const timerSlots=timer.slots||[];hasActiveSlot=timerSlots.some(slot=>{if(!slot.enabled||!isSlotActiveOnDay(slot,todayJs))return false;return TimeUtils.isInSlot(nowMin,slot);});}if(hasActiveSlot){tab.classList.add('slot-active');}const leftBtn=document.createElement('button');leftBtn.className='reorder-btn';leftBtn.innerHTML='◀';leftBtn.disabled=index===0;leftBtn.onclick=(e)=>{e.stopPropagation();this.moveTimer(timer.id,'up');};tab.appendChild(leftBtn);const nameSpan=document.createElement('span');nameSpan.textContent=timer.name;nameSpan.onclick=()=>{if(timer.id!==activeTimerId){this.switchTimer(timer.id);}};tab.appendChild(nameSpan);const rightBtn=document.createElement('button');rightBtn.className='reorder-btn';rightBtn.innerHTML='▶';rightBtn.disabled=index===timers.length-1;rightBtn.onclick=(e)=>{e.stopPropagation();this.moveTimer(timer.id,'down');};tab.appendChild(rightBtn);timerTabsEl.appendChild(tab);});}};
+function showRenamePopup(timerId){renameTimerId=timerId;const timer=timers.find(t=>t.id===timerId);document.getElementById('renameInput').value=timer?timer.name:'';document.getElementById('onUrlInput').value=timer?timer.onUrl||'':'';document.getElementById('offUrlInput').value=timer?timer.offUrl||'':'';document.getElementById('urlTestStatus').style.display='none';document.getElementById('copyScheduleStatus').style.display='none';const selectEl=document.getElementById('copyScheduleSelect');selectEl.innerHTML='<option value="">-- Select a timer to copy from --</option>';timers.forEach(t=>{if(t.id!==timerId){const option=document.createElement('option');option.value=t.id;option.textContent=t.name;selectEl.appendChild(option);}});document.getElementById('copyScheduleBtn').disabled=true;document.getElementById('renamePopup').classList.add('show');document.getElementById('infoPopupOverlay').classList.add('show');document.getElementById('renameInput').focus();}
+function hideRenamePopup(){document.getElementById('renamePopup').classList.remove('show');document.getElementById('infoPopupOverlay').classList.remove('show');renameTimerId=null;}
+document.getElementById('renameConfirmBtn').addEventListener('click',()=>{const newName=document.getElementById('renameInput').value;const onUrl=document.getElementById('onUrlInput').value;const offUrl=document.getElementById('offUrlInput').value;if(renameTimerId){TimerManager.renameTimer(renameTimerId,newName,onUrl,offUrl);hideRenamePopup();}});
+document.getElementById('testOnUrlBtn').addEventListener('click',()=>{const onUrl=document.getElementById('onUrlInput').value;URLController.testOnUrl(onUrl);});
+document.getElementById('testOffUrlBtn').addEventListener('click',()=>{const offUrl=document.getElementById('offUrlInput').value;URLController.testOffUrl(offUrl);});
+document.getElementById('renameCancelBtn').addEventListener('click',hideRenamePopup);
+document.getElementById('renameInput').addEventListener('keypress',(e)=>{if(e.key==='Enter'){document.getElementById('renameConfirmBtn').click();}});
+document.getElementById('copyScheduleSelect').addEventListener('change',(e)=>{const selectedTimerId=e.target.value;document.getElementById('copyScheduleBtn').disabled=!selectedTimerId;document.getElementById('copyScheduleStatus').style.display='none';});
+document.getElementById('copyScheduleBtn').addEventListener('click',()=>{const sourceTimerId=document.getElementById('copyScheduleSelect').value;const targetTimerId=renameTimerId;if(!sourceTimerId||!targetTimerId){return;}const sourceTimer=timers.find(t=>t.id===sourceTimerId);const targetTimer=timers.find(t=>t.id===targetTimerId);if(!sourceTimer||!targetTimer){alert('Error: Timer not found');return;}if(confirm(`Copy all ${sourceTimer.slots?.length||0} time slot(s) from "${sourceTimer.name}" to "${targetTimer.name}"?\n\nThis will replace the current schedule.`)){targetTimer.slots=JSON.parse(JSON.stringify(sourceTimer.slots||[]));if(targetTimerId===activeTimerId){slots=targetTimer.slots;}TimerManager.save();renderList();renderCanvases();updateNextStateChange();const statusEl=document.getElementById('copyScheduleStatus');statusEl.textContent=`✓ Successfully copied ${targetTimer.slots.length} slot(s) from "${sourceTimer.name}"`;statusEl.style.background='#10b981';statusEl.style.color='white';statusEl.style.display='block';setTimeout(()=>{statusEl.style.display='none';},3000);}});
+const DataManager={saveImmediate(){TimerManager.saveActiveTimer();TimerManager.save();},saveDebounced(){TimerManager.saveDebounced();},export(){TimerManager.saveActiveTimer();jsonDataEl.style.display="block";jsonDataEl.value=JSON.stringify({version:'2.0',timers:timers,exportDate:new Date().toISOString()},null,2);jsonDataEl.select();document.execCommand("copy");alert("Exported ALL timers JSON copied to clipboard.");},import(){const json=jsonDataEl.value.trim();if(!json){alert("Paste JSON first.");return;}try{const data=JSON.parse(json);if(Array.isArray(data)){timers=[{id:'timer-'+Date.now(),name:'Imported Timer',onUrl:'',offUrl:'',slots:data,manualMode:false,manualEndTime:null}];}else if(data.timers&&Array.isArray(data.timers)){timers=data.timers.map(t=>({...t,onUrl:t.onUrl||'',offUrl:t.offUrl||'',manualMode:t.manualMode||false,manualEndTime:t.manualEndTime||null}));}else if(data.version){timers=data.timers.map(t=>({...t,onUrl:t.onUrl||'',offUrl:t.offUrl||''}));}else{throw new Error("Invalid format");}activeTimerId=timers[0].id;TimerManager.loadActiveTimer();TimerManager.save();TimerManager.renderTabs();recalcSunBasedSlots();renderList();renderCanvases();alert(`Import successful! Loaded ${timers.length} timer(s).`);}catch(e){alert("Invalid JSON: "+e.message);}},saveToFile(){TimerManager.saveActiveTimer();const data=JSON.stringify({version:'2.0',timers:timers,exportDate:new Date().toISOString()},null,2);const blob=new Blob([data],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;const filenameInput=document.getElementById('filenameInput');let filename=filenameInput.value.trim();if(!filename){const now=new Date();const dateStr=now.toISOString().split('T')[0];filename=`all-timers-${dateStr}`;}if(!filename.endsWith('.json')){filename+='.json';}a.download=filename;document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);alert(`All ${timers.length} timer(s) saved to file successfully!`);},loadFromFile(file){if(!file){alert('Please select a file.');return;}const reader=new FileReader();reader.onload=(e)=>{try{const json=e.target.result;const data=JSON.parse(json);if(Array.isArray(data)){timers=[{id:'timer-'+Date.now(),name:'Imported Timer',onUrl:'',offUrl:'',slots:data.map((s)=>({id:s.id??Date.now(),start:s.start??"06:00",end:s.end??"08:00",enabled:s.enabled!==undefined?s.enabled:true,days:Array.isArray(s.days)?s.days:[true,true,true,true,true,true,true],sunBased:!!s.sunBased,sunEvent:s.sunEvent??"sunrise",sunOffset:s.sunOffset??0,sunDuration:s.sunDuration??60})),manualMode:false,manualEndTime:null}];}else if(data.timers&&Array.isArray(data.timers)){timers=data.timers.map(t=>({...t,onUrl:t.onUrl||'',offUrl:t.offUrl||'',manualMode:t.manualMode||false,manualEndTime:t.manualEndTime||null}));}else if(data.version){timers=data.timers.map(t=>({...t,onUrl:t.onUrl||'',offUrl:t.offUrl||'',manualMode:t.manualMode||false,manualEndTime:t.manualEndTime||null}));}else{throw new Error('Invalid file format');}activeTimerId=timers[0].id;TimerManager.loadActiveTimer();this.saveImmediate();TimerManager.renderTabs();recalcSunBasedSlots();renderList();renderCanvases();updateNextStateChange();alert(`Successfully loaded ${timers.length} timer(s) from file!`);}catch(e){alert('Error loading file: '+e.message);}};reader.onerror=()=>{alert('Error reading file.');};reader.readAsText(file);}};
+const CanvasRenderer={drawMarkers(ctx){ctx.textAlign="center";ctx.textBaseline="middle";for(let m=0;m<1440;m+=15){const a=(m/1440)*2*Math.PI-Math.PI/2;let inner,outer,lw;if(m%60===0){inner=RADIUS-8;outer=RADIUS+8;lw=2;}else if(m%30===0){inner=RADIUS-8;outer=RADIUS+3;lw=1;}else{inner=RADIUS-8;outer=RADIUS;lw=0.5;}const x1=CENTER_X+Math.cos(a)*inner;const y1=CENTER_Y+Math.sin(a)*inner;const x2=CENTER_X+Math.cos(a)*outer;const y2=CENTER_Y+Math.sin(a)*outer;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.strokeStyle="#aaa";ctx.lineWidth=lw;ctx.stroke();}ctx.font="11px sans-serif";ctx.fillStyle="#ccc";for(let h=0;h<24;h++){const a=(h*60)/1440*2*Math.PI-Math.PI/2;const tx=CENTER_X+Math.cos(a)*(RADIUS+16);const ty=CENTER_Y+Math.sin(a)*(RADIUS+16);const display=is24HourFormat?h:((h%12)||12);ctx.fillText(display.toString(),tx,ty);}},drawDayNight(ctx){const sr=TimeUtils.toMin(sunrise);const ss=TimeUtils.toMin(sunset);const a1=(sr/1440)*2*Math.PI-Math.PI/2;const a2=(ss/1440)*2*Math.PI-Math.PI/2;ctx.beginPath();ctx.arc(CENTER_X,CENTER_Y,RADIUS-25,0,2*Math.PI);ctx.strokeStyle="#1e3a8a";ctx.lineWidth=10;ctx.stroke();ctx.beginPath();if(sr<ss){ctx.arc(CENTER_X,CENTER_Y,RADIUS-25,a1,a2);}else{ctx.arc(CENTER_X,CENTER_Y,RADIUS-25,a1,1.5*Math.PI);ctx.arc(CENTER_X,CENTER_Y,RADIUS-25,-Math.PI/2,a2);}ctx.strokeStyle="#fbbf24";ctx.lineWidth=10;ctx.stroke();},drawCurvedText(ctx,text,radius,startAngle,endAngle){ctx.save();ctx.fillStyle="#ccc";ctx.font="11px sans-serif";ctx.textAlign="center";ctx.textBaseline="middle";const angleRange=endAngle-startAngle;const midAngle=startAngle+angleRange/2;const textSpan=angleRange*0.6;const textStartAngle=midAngle-textSpan/2;for(let i=0;i<text.length;i++){const charAngle=textStartAngle+(textSpan*(i+0.5))/text.length;ctx.save();ctx.translate(CENTER_X,CENTER_Y);ctx.rotate(charAngle+Math.PI/2);ctx.fillText(text[i],0,-radius);ctx.restore();}ctx.restore();},drawCircle(canvas,dayIndex){const ctx=canvas.getContext("2d",{alpha:false});if(!canvas._doubleBuffer){canvas._doubleBuffer=document.createElement('canvas');canvas._doubleBuffer.width=CANVAS_WIDTH;canvas._doubleBuffer.height=CANVAS_HEIGHT;}const bufferCtx=canvas._doubleBuffer.getContext("2d",{alpha:false});bufferCtx.clearRect(0,0,CANVAS_WIDTH,CANVAS_HEIGHT);bufferCtx.beginPath();bufferCtx.arc(CENTER_X,CENTER_Y,RADIUS,0,2*Math.PI);bufferCtx.strokeStyle="#e0e0e0";bufferCtx.lineWidth=20;bufferCtx.stroke();this.drawDayNight(bufferCtx);const now=new Date();const nowMin=now.getHours()*60+now.getMinutes();const todayJs=now.getDay();let anyActive=false;slots.forEach((slot)=>{if(!slot.enabled||!isSlotActiveOnDay(slot,dayIndex))return;const s=TimeUtils.toMin(slot.start);const e=TimeUtils.toMin(slot.end);const isNow=dayIndex===todayJs&&TimeUtils.isInSlot(nowMin,slot);if(isNow)anyActive=true;const color=isNow?"limegreen":"red";const a1=(s/1440)*2*Math.PI-Math.PI/2;const a2=(e/1440)*2*Math.PI-Math.PI/2;bufferCtx.beginPath();if(s<e){bufferCtx.arc(CENTER_X,CENTER_Y,RADIUS,a1,a2);}else{bufferCtx.arc(CENTER_X,CENTER_Y,RADIUS,a1,1.5*Math.PI);bufferCtx.arc(CENTER_X,CENTER_Y,RADIUS,-Math.PI/2,a2);}bufferCtx.strokeStyle=color;bufferCtx.lineWidth=20;bufferCtx.stroke();});const timer=timers.find(t=>t.id===activeTimerId);if(timer&&timer.manualMode&&dayIndex===todayJs){anyActive=true;bufferCtx.beginPath();bufferCtx.arc(CENTER_X,CENTER_Y,RADIUS-10,0,2*Math.PI);bufferCtx.strokeStyle="limegreen";bufferCtx.lineWidth=5;bufferCtx.stroke();}this.drawMarkers(bufferCtx);if(dayIndex===todayJs){const a=(nowMin/1440)*2*Math.PI-Math.PI/2;const x1=CENTER_X+Math.cos(a)*35;const y1=CENTER_Y+Math.sin(a)*35;const x2=CENTER_X+Math.cos(a)*RADIUS;const y2=CENTER_Y+Math.sin(a)*RADIUS;bufferCtx.beginPath();bufferCtx.moveTo(x1,y1);bufferCtx.lineTo(x2,y2);bufferCtx.strokeStyle=anyActive?"limegreen":"red";bufferCtx.lineWidth=3;bufferCtx.stroke();}const labelRadius=RADIUS-15;this.drawCurvedText(bufferCtx,"Night",labelRadius,-Math.PI/2,0);this.drawCurvedText(bufferCtx,"Morning",labelRadius,0,Math.PI/2);this.drawCurvedText(bufferCtx,"Afternoon",labelRadius,Math.PI/2,Math.PI);this.drawCurvedText(bufferCtx,"Evening",labelRadius,Math.PI,3*Math.PI/2);ctx.clearRect(0,0,CANVAS_WIDTH,CANVAS_HEIGHT);ctx.drawImage(canvas._doubleBuffer,0,0);}};
+function isSlotActiveOnDay(slot,jsDayIndex){const idx=jsDayToSlotIndex(jsDayIndex);return slot.days[idx];}
+function getSlotState(slot){const now=new Date();const nowDay=now.getDay();const nowMin=now.getHours()*60+now.getMinutes();const timer=timers.find(t=>t.id===activeTimerId);if(timer&&timer.manualMode){return{text:"Manual Override",css:"manual-override"};}if(!isSlotActiveOnDay(slot,nowDay)){return{text:"Inactive Today",css:"inactive"};}if(TimeUtils.isInSlot(nowMin,slot)){return{text:"Currently ON",css:""};}return{text:"Currently OFF",css:"inactive"};}
+function updateCenterOverlay(dayIndex){const now=new Date();const nowMin=now.getHours()*60+now.getMinutes();centerTimeEl.textContent=TimeUtils.formatTime(TimeUtils.toHHMM(nowMin));const isToday=dayIndex===now.getDay();const d=new Date(now);if(!isToday){const diff=(dayIndex-now.getDay()+7)%7;d.setDate(now.getDate()+diff);}const dateStr=d.toLocaleDateString("en-US",{day:"numeric",month:"long",year:"numeric"});const week=TimeUtils.isoWeek(d);const slotIdx=jsDayToSlotIndex(dayIndex);dateInfoEl.innerHTML=`${slotIndexToName(slotIdx)}${isToday?" (Today)":""}<br>${dateStr}<br>Week ${week}`;sunTimesEl.textContent=`Sunrise: ${TimeUtils.formatTime(sunrise)} | Sunset: ${TimeUtils.formatTime(sunset)}`;}
+function updateNextStateChange(){const now=new Date();const todayJs=now.getDay();const nowMin=now.getHours()*60+now.getMinutes();const timer=timers.find(t=>t.id===activeTimerId);if(timer&&timer.manualMode){nextStateChangeEl.textContent="Manual Mode Active";nextStateChangeEl.className="next-state-display active-now";return;}const todaySlots=slots.filter(slot=>slot.enabled&&isSlotActiveOnDay(slot,todayJs));if(todaySlots.length===0){nextStateChangeEl.textContent="No slots scheduled today";nextStateChangeEl.className="next-state-display";return;}let currentSlot=null;let nextChange=null;let nextChangeMin=Infinity;todaySlots.forEach(slot=>{const s=TimeUtils.toMin(slot.start);const e=TimeUtils.toMin(slot.end);if(TimeUtils.isInSlot(nowMin,slot)){currentSlot=slot;if(s<e){nextChangeMin=e;}else{nextChangeMin=e;}}else{if(s>nowMin&&s<nextChangeMin){nextChangeMin=s;}else if(s<nowMin&&s<e){if(e>nowMin&&e<nextChangeMin){nextChangeMin=e;}}}});if(currentSlot){const endTime=TimeUtils.formatTime(currentSlot.end);const minsUntil=nextChangeMin>nowMin?nextChangeMin-nowMin:(1440-nowMin)+nextChangeMin;const hours=Math.floor(minsUntil/60);const mins=minsUntil%60;const timeStr=hours>0?`${hours}h ${mins}m`:`${mins}m`;nextStateChangeEl.textContent=`ON - Turns OFF in ${timeStr} (at ${endTime})`;nextStateChangeEl.className="next-state-display active-now";}else{let nextOnMin=Infinity;let nextSlot=null;todaySlots.forEach(slot=>{const s=TimeUtils.toMin(slot.start);if(s>nowMin&&s<nextOnMin){nextOnMin=s;nextSlot=slot;}});if(nextSlot){const startTime=TimeUtils.formatTime(nextSlot.start);const minsUntil=nextOnMin-nowMin;const hours=Math.floor(minsUntil/60);const mins=minsUntil%60;const timeStr=hours>0?`${hours}h ${mins}m`:`${mins}m`;nextStateChangeEl.textContent=`OFF - Turns ON in ${timeStr} (at ${startTime})`;nextStateChangeEl.className="next-state-display inactive-now";}else{nextStateChangeEl.textContent="OFF - No more slots today";nextStateChangeEl.className="next-state-display inactive-now";}}}
+const ManualControl={getActiveTimer(){return timers.find(t=>t.id===activeTimerId);},start(){const sel=document.getElementById("manualDuration");const mins=parseInt(sel.value,10)||0;if(!mins)return;const timer=this.getActiveTimer();if(!timer)return;timer.manualMode=true;const now=new Date();timer.manualEndTime=new Date(now.getTime()+mins*60*1000);if(manualTimer)clearTimeout(manualTimer);manualTimer=setTimeout(()=>this.stop(),mins*60*1000);TimerManager.save();this.update();renderCanvases();renderList();updateNextStateChange();},stop(){const timer=this.getActiveTimer();if(!timer)return;timer.manualMode=false;timer.manualEndTime=null;if(manualTimer)clearTimeout(manualTimer);manualTimer=null;TimerManager.save();this.update();renderCanvases();renderList();updateNextStateChange();},update(){const timer=this.getActiveTimer();if(!timer)return;if(timer.manualMode&&timer.manualEndTime){const now=new Date();let diff=Math.ceil((timer.manualEndTime-now)/60000);if(diff<=0){this.stop();return;}const h=Math.floor(diff/60);const m=diff%60;const remainStr=(h?`${h}h `:"")+`${m}m`;const endStr=TimeUtils.formatTime(TimeUtils.toLocalHHMM(timer.manualEndTime));manualStatusDisplay.className="manual-status-display active";manualStatusDisplay.style.display="flex";manualStatusDisplay.innerHTML=`<div class="manual-status-title">MANUAL MODE ACTIVE</div><div class="manual-status-time">Remaining: ${remainStr} | Ends at: ${endStr}</div>`;manualFormStatus.className="manual-form-status active";manualFormStatus.style.display="block";manualFormStatus.textContent=`ACTIVE - ${remainStr} remaining (ends at ${endStr})`;}else{manualStatusDisplay.style.display="none";manualFormStatus.style.display="none";}}};
+function renderCanvases(force){if(isAnimating&&!force)return;canvasWrapper.innerHTML="";canvasWrapper.style.scrollBehavior="auto";canvasWrapper.style.scrollSnapType="x mandatory";const prev=(currentViewDay-1+7)%7;const next=(currentViewDay+1)%7;const daysToRender=[prev,currentViewDay,next];daysToRender.forEach((dayIdx)=>{const item=document.createElement("div");item.className="day-canvas-item";item.dataset.dayIndex=dayIdx.toString();const c=document.createElement("canvas");c.width=CANVAS_WIDTH;c.height=CANVAS_HEIGHT;item.appendChild(c);canvasWrapper.appendChild(item);CanvasRenderer.drawCircle(c,dayIdx);});canvasWrapper.scrollLeft=CANVAS_WIDTH;setTimeout(()=>{canvasWrapper.style.scrollBehavior="smooth";},50);updateCenterOverlay(currentViewDay);}
+function renderDayNavigation(){daySlider.innerHTML="";const todayJs=new Date().getDay();const now=new Date();const nowMin=now.getHours()*60+now.getMinutes();for(let jsDay=0;jsDay<7;jsDay++){const slotIdx=jsDayToSlotIndex(jsDay);const tab=document.createElement("div");tab.className="day-tab"+(jsDay===currentViewDay?" active":"")+(jsDay===todayJs?" today":"");const isToday=jsDay===todayJs;if(isToday){const hasActiveSlot=slots.some(slot=>{return slot.enabled&&isSlotActiveOnDay(slot,jsDay)&&TimeUtils.isInSlot(nowMin,slot);});if(hasActiveSlot){tab.className+=" slot-active";}}tab.textContent=slotIndexToName(slotIdx).slice(0,3);tab.onclick=()=>animateDayChange(jsDay);daySlider.appendChild(tab);}const slotIdx=jsDayToSlotIndex(currentViewDay);currentDayIndicator.textContent=`Viewing: ${slotIndexToName(slotIdx)}`+(currentViewDay===todayJs?" (Today)":"");const active=daySlider.querySelector(".day-tab.active");if(active){daySlider.scrollLeft=active.offsetLeft-daySlider.offsetWidth/2+active.offsetWidth/2;}}
+function animateDayChange(targetDay){if(isAnimating)return;targetDay=((targetDay%7)+7)%7;if(targetDay===currentViewDay)return;const forward=(targetDay-currentViewDay+7)%7;const backward=(currentViewDay-targetDay+7)%7;const direction=forward<=backward?1:-1;const steps=Math.min(forward,backward);if(steps===0)return;isAnimating=true;let stepCount=0;function step(){if(stepCount>=steps){isAnimating=false;renderDayNavigation();renderCanvases(true);renderList();return;}renderDayNavigation();renderCanvases(true);canvasWrapper.style.scrollSnapType="none";canvasWrapper.style.scrollBehavior="auto";canvasWrapper.scrollLeft=CANVAS_WIDTH;void canvasWrapper.offsetHeight;canvasWrapper.style.scrollBehavior="smooth";const targetScroll=direction>0?CANVAS_WIDTH*2:0;canvasWrapper.scrollLeft=targetScroll;setTimeout(()=>{canvasWrapper.style.scrollBehavior="auto";currentViewDay=(currentViewDay+direction+7)%7;renderDayNavigation();renderCanvases(true);stepCount++;setTimeout(step,50);},DAY_ANIMATION_DURATION);}step();}
+canvasWrapper.addEventListener("scroll",()=>{if(isAnimating)return;clearTimeout(scrollTimeout);scrollTimeout=setTimeout(()=>{const pos=canvasWrapper.scrollLeft;const threshold=CANVAS_WIDTH/2;if(pos<threshold){currentViewDay=(currentViewDay-1+7)%7;}else if(pos>CANVAS_WIDTH+threshold){currentViewDay=(currentViewDay+1)%7;}canvasWrapper.scrollLeft=CANVAS_WIDTH;renderDayNavigation();renderCanvases();renderList();},150);});
+function recalcSunBasedSlots(){slots.forEach((slot)=>{if(!slot.sunBased)return;const base=slot.sunEvent==="sunrise"?sunrise:sunset;const baseM=TimeUtils.toMin(base);const sm=(baseM+slot.sunOffset+1440)%1440;const em=(sm+slot.sunDuration)%1440;slot.start=TimeUtils.toHHMM(sm);slot.end=TimeUtils.toHHMM(em);});DataManager.saveDebounced();renderCanvases();renderList();}
+function getUserLocation(){if(!navigator.geolocation){geoMsgEl.textContent="Geolocation not supported.";return;}geoMsgEl.textContent="Getting location…";navigator.geolocation.getCurrentPosition((pos)=>{fetchSunTimes(pos.coords.latitude,pos.coords.longitude);},(err)=>{geoMsgEl.textContent="";});}
+function fetchSunTimes(lat,lon){geoMsgEl.textContent="Fetching sunrise/sunset…";fetch(`https://api.sunrise-sunset.org/json?lat=${lat}&lng=${lon}&formatted=0`).then((r)=>r.json()).then((data)=>{if(data.status==="OK"){sunrise=TimeUtils.toLocalHHMM(new Date(data.results.sunrise));sunset=TimeUtils.toLocalHHMM(new Date(data.results.sunset));geoMsgEl.textContent="";recalcSunBasedSlots();updateCenterOverlay(currentViewDay);}else{geoMsgEl.textContent="Could not fetch sunrise/sunset.";}}).catch(()=>{geoMsgEl.textContent="Could not fetch sunrise/sunset.";});}
+function updateMoonPhase(){const phases=["New Moon","Waxing Crescent","First Quarter","Waxing Gibbous","Full Moon","Waning Gibbous","Last Quarter","Waning Crescent"];const icons=["🌑","🌒","🌓","🌔","🌕","🌖","🌗","🌘"];const now=new Date();const lp=new Date(Date.UTC(2000,0,6,18,14));const days=(now-lp)/86400000;const lun=days/29.53058867;const idx=Math.floor((lun-Math.floor(lun))*8+0.5)%8;moonIconEl.textContent=icons[idx];moonTextEl.textContent=phases[idx];}
+function showLockedMessage(){const msg=document.createElement("div");msg.className="locked-message";msg.textContent="Enter Edit mode to change days";document.body.appendChild(msg);setTimeout(()=>{if(msg.parentNode){msg.parentNode.removeChild(msg);}},2000);}
+function buildDayButtons(selectedDays,onToggle,inEditMode=false){const wrap=document.createElement("div");wrap.className="daysContainer";dayLetters.forEach((l,idx)=>{const b=document.createElement("button");b.textContent=l;b.type="button";b.className="dayBtn "+(selectedDays[idx]?"on":"off");b.onclick=()=>{if(!inEditMode){showLockedMessage();return;}selectedDays[idx]=!selectedDays[idx];b.className="dayBtn "+(selectedDays[idx]?"on":"off");if(onToggle)onToggle();};wrap.appendChild(b);});return wrap;}
+function createDayButtonContainer(containerId){const cont=document.getElementById(containerId);cont.innerHTML="";dayLetters.forEach((letter,idx)=>{const b=document.createElement("button");b.type="button";b.textContent=letter;b.className="dayBtn on";b.dataset.day=idx.toString();b.onclick=()=>{b.classList.toggle("on");b.classList.toggle("off");};cont.appendChild(b);});}
+function initFormDays(){createDayButtonContainer("sunDays");createDayButtonContainer("fixedDays");}
+document.getElementById("addSunSlot").addEventListener("click",()=>{const evSel=document.getElementById("sunEvent");const offSel=document.getElementById("sunOffset");const durSel=document.getElementById("sunDuration");const sunEvent=evSel.value;const sunOffset=parseInt(offSel.value,10);const sunDuration=parseInt(durSel.value,10);const dayButtons=document.querySelectorAll("#sunDays .dayBtn");const days=Array.from(dayButtons).map((b)=>b.classList.contains("on"));const base=sunEvent==="sunrise"?sunrise:sunset;const baseM=TimeUtils.toMin(base);const sm=(baseM+sunOffset+1440)%1440;const em=(sm+sunDuration)%1440;const slot={id:Date.now(),start:TimeUtils.toHHMM(sm),end:TimeUtils.toHHMM(em),enabled:true,days,sunBased:true,sunEvent,sunOffset,sunDuration};slots.push(slot);DataManager.saveDebounced();renderList();renderCanvases();updateNextStateChange();initFormDays();});
+document.getElementById("addForm").addEventListener("submit",(e)=>{e.preventDefault();const st=document.getElementById("startTime").value;const ed=document.getElementById("endTime").value;if(!st||!ed)return;const dayButtons=document.querySelectorAll("#fixedDays .dayBtn");const days=Array.from(dayButtons).map((b)=>b.classList.contains("on"));const slot={id:Date.now(),start:st,end:ed,enabled:true,days,sunBased:false};slots.push(slot);DataManager.saveDebounced();renderList();renderCanvases();updateNextStateChange();e.target.reset();initFormDays();});
+function openEditPanel(slot,li){li.innerHTML="";const box=document.createElement("div");box.style.width="100%";box.style.background="#222";box.style.padding="10px";box.style.borderRadius="6px";const title=document.createElement("h4");title.textContent="Edit Slot";title.style.margin="0 0 8px";box.appendChild(title);const row1=document.createElement("div");row1.className="form-row";row1.innerHTML=`<label>Start:</label>`;const inpStart=document.createElement("input");inpStart.type="time";inpStart.value=slot.start;row1.appendChild(inpStart);box.appendChild(row1);const row2=document.createElement("div");row2.className="form-row";row2.innerHTML=`<label>End:</label>`;const inpEnd=document.createElement("input");inpEnd.type="time";inpEnd.value=slot.end;row2.appendChild(inpEnd);box.appendChild(row2);const daysCopy=[...slot.days];const daysWrap=document.createElement("div");const dayButtons=buildDayButtons(daysCopy,null,true);daysWrap.appendChild(dayButtons);box.appendChild(daysWrap);if(slot.sunBased){const sunInfo=document.createElement("div");sunInfo.className="sun-based-indicator";const ev=slot.sunEvent==="sunrise"?"Sunrise":"Sunset";const off=slot.sunOffset>0?`${slot.sunOffset} min after`:slot.sunOffset<0?`${Math.abs(slot.sunOffset)} min before`:"Exact";sunInfo.textContent=`${ev} ${off} (${slot.sunDuration} min)`;box.appendChild(sunInfo);}const btns=document.createElement("div");btns.style.display="flex";btns.style.gap="6px";btns.style.marginTop="8px";const save=document.createElement("button");save.className="btn toggleBtn";save.textContent="Save";save.onclick=()=>{slot.start=inpStart.value||slot.start;slot.end=inpEnd.value||slot.end;slot.days=[...daysCopy];DataManager.saveDebounced();renderList();renderCanvases();updateNextStateChange();};const cancel=document.createElement("button");cancel.className="btn delBtn";cancel.textContent="Cancel";cancel.onclick=()=>renderList();btns.appendChild(save);btns.appendChild(cancel);box.appendChild(btns);li.appendChild(box);}
+function renderList(){slotListEl.innerHTML="";slots.sort((a,b)=>TimeUtils.toMin(a.start)-TimeUtils.toMin(b.start));slots.forEach((slot)=>{const li=document.createElement("li");slotListEl.appendChild(li);const info=document.createElement("div");info.className="slotInfo";const title=document.createElement("span");title.textContent=`${TimeUtils.formatTime(slot.start)} → ${TimeUtils.formatTime(slot.end)}`;title.style.color=slot.enabled?"#eee":"#666";info.appendChild(title);if(slot.sunBased){const sun=document.createElement("div");sun.className="sun-based-indicator";const ev=slot.sunEvent==="sunrise"?"Sunrise":"Sunset";const off=slot.sunOffset>0?`${slot.sunOffset} min after`:slot.sunOffset<0?`${Math.abs(slot.sunOffset)} min before`:"Exact";sun.textContent=`${ev} ${off} (${slot.sunDuration} min)`;info.appendChild(sun);}if(slot.enabled){const st=getSlotState(slot);const div=document.createElement("div");div.className="slot-state-indicator "+st.css;div.textContent=st.text;info.appendChild(div);}const daysCopy=[...slot.days];const dayButtons=buildDayButtons(daysCopy,()=>{slot.days=[...daysCopy];DataManager.saveDebounced();renderCanvases();updateNextStateChange();},false);info.appendChild(dayButtons);li.appendChild(info);const ctr=document.createElement("div");ctr.className="controls";const tbtn=document.createElement("button");tbtn.className="btn toggleBtn";tbtn.textContent=slot.enabled?"Disable":"Enable";tbtn.onclick=()=>{slot.enabled=!slot.enabled;DataManager.saveDebounced();renderList();renderCanvases();updateNextStateChange();};const edit=document.createElement("button");edit.className="btn editBtn";edit.textContent="Edit";edit.onclick=()=>openEditPanel(slot,li);const del=document.createElement("button");del.className="btn delBtn";del.textContent="Delete";del.onclick=()=>{slots=slots.filter((s)=>s.id!==slot.id);DataManager.saveDebounced();renderList();renderCanvases();updateNextStateChange();};ctr.appendChild(tbtn);ctr.appendChild(edit);ctr.appendChild(del);li.appendChild(ctr);});}
+timeFormatToggle.addEventListener("change",()=>{is24HourFormat=timeFormatToggle.checked;const displayStyle=is24HourFormat?'none':'block';amPmLabels.forEach(label=>{if(label)label.style.display=displayStyle;});const canvasItems=canvasWrapper.querySelectorAll('.day-canvas-item');canvasItems.forEach(item=>{const canvas=item.querySelector('canvas');const dayIdx=parseInt(item.dataset.dayIndex);if(canvas){CanvasRenderer.drawCircle(canvas,dayIdx);}});renderList();updateCenterOverlay(currentViewDay);ManualControl.update();});
+document.getElementById("prevDay").addEventListener("click",()=>{animateDayChange((currentViewDay-1+7)%7);});
+document.getElementById("nextDay").addEventListener("click",()=>{animateDayChange((currentViewDay+1)%7);});
+document.getElementById("manualOnBtn").addEventListener("click",()=>{ManualControl.start();});
+document.getElementById("manualOffBtn").addEventListener("click",()=>{ManualControl.stop();});
+document.getElementById("exportBtn").addEventListener("click",()=>{DataManager.export();});
+document.getElementById("importBtn").addEventListener("click",()=>{if(jsonDataEl.style.display==="none"||jsonDataEl.style.display===""){jsonDataEl.style.display="block";jsonDataEl.value="";jsonDataEl.focus();}else{DataManager.import();}});
+document.getElementById("getLocationBtn").addEventListener("click",()=>{getUserLocation();});
+document.getElementById("saveFileBtn").addEventListener("click",()=>{DataManager.saveToFile();});
+document.getElementById("loadFileBtn").addEventListener("click",()=>{document.getElementById("fileInput").click();});
+document.getElementById("fileInput").addEventListener("change",(e)=>{const file=e.target.files[0];if(file){DataManager.loadFromFile(file);}e.target.value='';});
+document.getElementById("filenameInfoBtn").addEventListener("click",()=>{document.getElementById("infoPopup").classList.add("show");document.getElementById("infoPopupOverlay").classList.add("show");});
+document.getElementById("infoPopupClose").addEventListener("click",()=>{document.getElementById("infoPopup").classList.remove("show");document.getElementById("infoPopupOverlay").classList.remove("show");});
+document.getElementById("infoPopupOverlay").addEventListener("click",()=>{document.getElementById("infoPopup").classList.remove("show");document.getElementById("infoPopupOverlay").classList.remove("show");hideRenamePopup();});
+document.getElementById("addTimerBtn").addEventListener("click",()=>{TimerManager.addTimer();});
+document.getElementById("editTimerBtn").addEventListener("click",()=>{if(activeTimerId){showRenamePopup(activeTimerId);}});
+document.getElementById("deleteTimerBtn").addEventListener("click",()=>{if(activeTimerId&&timers.length>1){const timer=timers.find(t=>t.id===activeTimerId);const timerName=timer?timer.name:'this timer';if(confirm(`Are you sure you want to delete "${timerName}"?`)){TimerManager.deleteTimer(activeTimerId);}}});
+document.getElementById("timerExpandBtn").addEventListener("click",()=>{const actions=document.getElementById("timerTabActions");const btn=document.getElementById("timerExpandBtn");const container=document.querySelector(".timer-tabs-container");if(actions.classList.contains("expanded")){actions.classList.remove("expanded");btn.classList.remove("expanded");container.classList.remove("expanded");}else{actions.classList.add("expanded");btn.classList.add("expanded");container.classList.add("expanded");}});
+document.getElementById("closeTimerActionsBtn").addEventListener("click",()=>{const actions=document.getElementById("timerTabActions");const btn=document.getElementById("timerExpandBtn");const container=document.querySelector(".timer-tabs-container");actions.classList.remove("expanded");btn.classList.remove("expanded");container.classList.remove("expanded");});
+document.getElementById("clearLogBtn").addEventListener("click",()=>{if(confirm("Clear all log entries?")){Logger.clear();}});
+(function startup(){TimerManager.init();initFormDays();renderDayNavigation();renderCanvases();renderList();updateMoonPhase();ManualControl.update();updateNextStateChange();getUserLocation();Logger.loadFromStorage();setInterval(()=>{requestAnimationFrame(()=>{const canvas=canvasWrapper.querySelector(`.day-canvas-item[data-day-index="${currentViewDay}"] canvas`);if(canvas){CanvasRenderer.drawCircle(canvas,currentViewDay);}updateCenterOverlay(currentViewDay);updateMoonPhase();ManualControl.update();updateNextStateChange();TimerManager.renderTabs();renderDayNavigation();URLController.checkSlotStateChanges();});},3000);})();
+</script>
+
+<div class="claude-footer">
+  <p>✨ Built with <a href="https://claude.ai" class="claude-link" target="_blank" rel="noopener noreferrer">
+    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23CC9B7A'%3E%3Cpath d='M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z'/%3E%3C/svg%3E" alt="Claude AI" class="claude-icon">Claude AI</a></p>
+</div>
+
+<div class="paypal-footer">
+  <p>Support this project</p>
+  <a href="https://www.paypal.me/LDijkman" class="paypal-link" target="_blank" rel="noopener noreferrer">
+    <span class="paypal-icon">💙</span>
+    <span>Donate via PayPal</span>
+  </a>
+</div>
+
+<br><br>
+    
+<a href="https://github.com/ElToberino/Tobers_Timeswitch" target="another">https://github.com/ElToberino/Tobers_Timeswitch</a> 
+<br><br>
+<a href="https://www.hackster.io/eltoberino/tobers-timeswitch-for-esp8266-ab3e06" target="new">https://www.hackster.io/eltoberino/tobers-timeswitch-for-esp8266-ab3e06</a>
+<br>
+  <br>
+  SonOff S60 wall plug ESP32 => it is to hard to get to flash pins<br>
+  possible but hard<br><br>
+  
+  <br><br>
+  
+  SonOff BasicR4<br> has ESP32-C3 <br>and programming flash connection inside RX TX 3.3v gnd 
+  <br>a 5 euro ESP32-C3 relais
+  <br><br>
+  Comparison:<br>
+SonOff BASICR3 (ESP8285): 1MB flash<br>
+Sonoff BASICR4 (ESP32-C3): 4MB flash <br>
+  <br><br>
+  Flash a Sonoff Basic R4
+<br>
+  i know can flash tasmota on it and use it with home assistant<br>
+  but Home Assistant is to much for me, OverKill
+  
+  
+  <br><br>EWElink and others i do not like<br>
+  
+  
+  
+  
+  
+  <a href="https://github.com/ldijkman/Swipe-ESP32-Timer-Switch" target="_blank">https://github.com/ldijkman/Swipe-ESP32-Timer-Switch</a>
+  
+  
+  
+  <br>
+
+<p align="center">
+  <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" width="50" alt="GitHub Logo">
+
+  <img src="https://github.com/ldijkman.png" width="50" alt="User Avatar" style="border-radius: 50%;">
+</p>
+  
+  DAILY 24-HOUR CIRCULAR PLANNER
+
+  
+</body>
+</html>
