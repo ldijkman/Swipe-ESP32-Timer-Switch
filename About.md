@@ -367,10 +367,8 @@ https://www.hackster.io/eltoberino/tobers-timeswitch-for-esp8266-ab3e06
 
 ---
 
-added manual control button window
 
-store if 24hr user https://codepen.io/ldijkman/pen/emzYXeW
-
-
-log manual in orange https://codepen.io/ldijkman/pen/jErOJxr
+- added manual control button window
+- store if 24hr user 
+- log manual in orange https://codepen.io/ldijkman/pen/jErOJxr
 
