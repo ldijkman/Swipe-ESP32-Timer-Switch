@@ -9,6 +9,7 @@ description made from the code by Claude ai
 - log manual in orange https://codepen.io/ldijkman/pen/jErOJxr
 
 - save log button https://codepen.io/ldijkman/pen/WbxNWNo
+- delete did not work https://codepen.io/ldijkman/pen/GgqgRqw
 
 
 
@@ -375,3 +376,4 @@ https://www.hackster.io/eltoberino/tobers-timeswitch-for-esp8266-ab3e06
 - log manual in orange https://codepen.io/ldijkman/pen/jErOJxr
 
 - save log button https://codepen.io/ldijkman/pen/WbxNWNo
+- delete did not work https://codepen.io/ldijkman/pen/GgqgRqw
