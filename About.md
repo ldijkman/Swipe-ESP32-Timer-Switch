@@ -9,7 +9,7 @@ description made from the code by Claude ai
 
 - store if 24hr user 
 
-log manual in orange https://codepen.io/ldijkman/pen/jErOJxr
+- log manual in orange https://codepen.io/ldijkman/pen/jErOJxr
 
 
 
