@@ -12,7 +12,7 @@ Multi-Timer Edition
 circle schedule timeslots
 
 
-
+https://github.com/ldijkman/Swipe-ESP32-Timer-Switch/blob/main/Flash_sonoff_basic_r4_esp32c3_ftdi_pogo_pin_clip.jpg
 
 https://codepen.io/ldijkman/pen/pvyQWOz
 
@@ -22,3 +22,6 @@ Sonoff Basic R4 ESP32-C3
 ordered ftdi and a 4 pin flashclip
 
 https://github.com/ldijkman/Swipe-ESP32-Timer-Switch/blob/main/About.md
+
+
+
