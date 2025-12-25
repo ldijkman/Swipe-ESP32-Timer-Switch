@@ -3,12 +3,9 @@ description made from the code by Claude ai
 
 # Swipe 24/7 Circular TimeSlots Timer - Multi-Timer
 
-https://codepen.io/ldijkman/full/qENBELO
+
 
 added manual control button window
-https://codepen.io/ldijkman/pen/ZYOEPLB
-
-https://codepen.io/ldijkman/pen/emzYXGv
 
 store if 24hr user https://codepen.io/ldijkman/pen/emzYXeW
 
@@ -369,11 +366,9 @@ https://www.hackster.io/eltoberino/tobers-timeswitch-for-esp8266-ab3e06
 **Note**: This is a client-side web application. URLs are called from your browser, so the browser must remain open and have network access to your devices for automation to work.
 
 
-https://codepen.io/ldijkman/full/qENBELO
+---
 
 added manual control button window
-https://codepen.io/ldijkman/pen/ZYOEPLB
-
-https://codepen.io/ldijkman/pen/emzYXGv
 
 store if 24hr user https://codepen.io/ldijkman/pen/emzYXeW
+
