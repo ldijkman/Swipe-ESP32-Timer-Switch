@@ -5,6 +5,13 @@ description made from the code by Claude ai
 
 https://codepen.io/ldijkman/full/qENBELO
 
+added manual control button window
+https://codepen.io/ldijkman/pen/ZYOEPLB
+
+
+
+
+
 A web-based multi-timer application with a unique circular 24-hour interface for scheduling and controlling devices via URL calls. Perfect for home automation, IoT devices, irrigation systems, and lighting control.
 
 ## 🌟 Features
@@ -361,3 +368,6 @@ https://www.hackster.io/eltoberino/tobers-timeswitch-for-esp8266-ab3e06
 
 
 https://codepen.io/ldijkman/full/qENBELO
+
+added manual control button window
+https://codepen.io/ldijkman/pen/ZYOEPLB
