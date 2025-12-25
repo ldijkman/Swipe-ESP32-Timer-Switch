@@ -4,11 +4,8 @@ description made from the code by Claude ai
 # Swipe 24/7 Circular TimeSlots Timer - Multi-Timer
 
 
-
 - added manual control button window
-
 - store if 24hr user 
-
 - log manual in orange https://codepen.io/ldijkman/pen/jErOJxr
 
 
