@@ -8,6 +8,8 @@ https://codepen.io/ldijkman/full/qENBELO
 added manual control button window
 https://codepen.io/ldijkman/pen/ZYOEPLB
 
+https://codepen.io/ldijkman/pen/emzYXGv
+
 
 
 
@@ -371,3 +373,5 @@ https://codepen.io/ldijkman/full/qENBELO
 
 added manual control button window
 https://codepen.io/ldijkman/pen/ZYOEPLB
+
+https://codepen.io/ldijkman/pen/emzYXGv
