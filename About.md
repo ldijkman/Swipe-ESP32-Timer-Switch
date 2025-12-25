@@ -8,7 +8,7 @@ description made from the code by Claude ai
 - store if 24hr user 
 - log manual in orange https://codepen.io/ldijkman/pen/jErOJxr
 
-- save log button https://codepen.io/ldijkman/pen/YPWzgmb
+- save log button https://codepen.io/ldijkman/pen/WbxNWNo
 
 
 
@@ -374,5 +374,4 @@ https://www.hackster.io/eltoberino/tobers-timeswitch-for-esp8266-ab3e06
 - store if 24hr user 
 - log manual in orange https://codepen.io/ldijkman/pen/jErOJxr
 
-- save log button https://codepen.io/ldijkman/pen/YPWzgmb
-
+- save log button https://codepen.io/ldijkman/pen/WbxNWNo
