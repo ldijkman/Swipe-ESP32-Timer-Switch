@@ -10,7 +10,7 @@ https://codepen.io/ldijkman/pen/ZYOEPLB
 
 https://codepen.io/ldijkman/pen/emzYXGv
 
-
+store if 24hr user https://codepen.io/ldijkman/pen/emzYXeW
 
 
 
@@ -375,3 +375,5 @@ added manual control button window
 https://codepen.io/ldijkman/pen/ZYOEPLB
 
 https://codepen.io/ldijkman/pen/emzYXGv
+
+store if 24hr user https://codepen.io/ldijkman/pen/emzYXeW
