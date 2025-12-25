@@ -8,6 +8,8 @@ description made from the code by Claude ai
 - store if 24hr user 
 - log manual in orange https://codepen.io/ldijkman/pen/jErOJxr
 
+- save log button https://codepen.io/ldijkman/pen/YPWzgmb
+
 
 
 A web-based multi-timer application with a unique circular 24-hour interface for scheduling and controlling devices via URL calls. Perfect for home automation, IoT devices, irrigation systems, and lighting control.
@@ -371,4 +373,6 @@ https://www.hackster.io/eltoberino/tobers-timeswitch-for-esp8266-ab3e06
 - added manual control button window
 - store if 24hr user 
 - log manual in orange https://codepen.io/ldijkman/pen/jErOJxr
+
+- save log button https://codepen.io/ldijkman/pen/YPWzgmb
 
