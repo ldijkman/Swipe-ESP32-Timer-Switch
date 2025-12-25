@@ -5,9 +5,9 @@ description made from the code by Claude ai
 
 
 
-added manual control button window
+- added manual control button window
 
-store if 24hr user https://codepen.io/ldijkman/pen/emzYXeW
+- store if 24hr user 
 
 log manual in orange https://codepen.io/ldijkman/pen/jErOJxr
 
