@@ -370,6 +370,10 @@ https://www.hackster.io/eltoberino/tobers-timeswitch-for-esp8266-ab3e06
 
 **Note**: This is a client-side web application. URLs are called from your browser, so the browser must remain open and have network access to your devices for automation to work.
 
+bit hard with android
+trying to figure out
+how to keep it active
+
 
 ---
 
