@@ -1,0 +1,468 @@
+{
+  "version": "2.0",
+  "timers": [
+    {
+      "id": "timer-1764500008901",
+      "name": "Living",
+      "slots": [
+        {
+          "id": 1766675649408,
+          "start": "06:48",
+          "end": "08:48",
+          "enabled": true,
+          "days": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "sunBased": true,
+          "sunEvent": "sunrise",
+          "sunOffset": -120,
+          "sunDuration": 120
+        },
+        {
+          "id": 1766675194739,
+          "start": "16:46",
+          "end": "19:46",
+          "enabled": true,
+          "days": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "sunBased": true,
+          "sunEvent": "sunset",
+          "sunOffset": 15,
+          "sunDuration": 180
+        }
+      ],
+      "manualMode": false,
+      "manualEndTime": null,
+      "onUrl": "http://10.10.100.111/cm?cmnd=Power%20ON",
+      "offUrl": "http://10.10.100.111/cm?cmnd=Power%20OFF",
+      "enabled": true
+    },
+    {
+      "id": "timer-1764500007890",
+      "name": "Kitchen 1",
+      "slots": [
+        {
+          "id": 1766675649408,
+          "start": "06:48",
+          "end": "08:48",
+          "enabled": true,
+          "days": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "sunBased": true,
+          "sunEvent": "sunrise",
+          "sunOffset": -120,
+          "sunDuration": 120
+        },
+        {
+          "id": 1766675194739,
+          "start": "16:45",
+          "end": "19:45",
+          "enabled": true,
+          "days": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "sunBased": true,
+          "sunEvent": "sunset",
+          "sunOffset": 15,
+          "sunDuration": 180
+        }
+      ],
+      "manualMode": false,
+      "manualEndTime": null,
+      "onUrl": "http://10.10.100.104/LED=ON",
+      "offUrl": "http://10.10.100.104/LED=OFF",
+      "enabled": false
+    },
+    {
+      "id": "timer-1764500005678",
+      "name": "Garage",
+      "slots": [],
+      "manualMode": false,
+      "manualEndTime": null,
+      "onUrl": "http://10.10.100.112/cm?cmnd=Power%20ON",
+      "offUrl": "http://10.10.100.112/cm?cmnd=Power%20OFF",
+      "enabled": true
+    },
+    {
+      "id": "timer-1764500004567",
+      "name": "Office",
+      "slots": [
+        {
+          "id": 1764500040001,
+          "start": "08:00",
+          "end": "17:30",
+          "enabled": true,
+          "days": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            false,
+            false
+          ],
+          "sunBased": false
+        },
+        {
+          "id": 1764500040002,
+          "start": "19:00",
+          "end": "21:00",
+          "enabled": true,
+          "days": [
+            true,
+            false,
+            true,
+            false,
+            true,
+            false,
+            false
+          ],
+          "sunBased": false
+        }
+      ],
+      "manualMode": false,
+      "manualEndTime": null,
+      "onUrl": "http://10.10.100.108/cm?cmnd=Power%20ON",
+      "offUrl": "http://10.10.100.108/cm?cmnd=Power%20OFF",
+      "enabled": true
+    },
+    {
+      "id": "timer-1764500006789",
+      "name": "Porch",
+      "slots": [
+        {
+          "id": 1764500060002,
+          "start": "05:30",
+          "end": "07:30",
+          "enabled": true,
+          "days": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "sunBased": false
+        },
+        {
+          "id": 1764500060001,
+          "start": "17:30",
+          "end": "23:59",
+          "enabled": true,
+          "days": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "sunBased": false
+        }
+      ],
+      "manualMode": false,
+      "manualEndTime": null,
+      "onUrl": "http://10.10.100.109/cm?cmnd=Power%20ON",
+      "offUrl": "http://10.10.100.109/cm?cmnd=Power%20OFF",
+      "enabled": true
+    },
+    {
+      "id": "timer-1764500002345",
+      "name": "Bedroom",
+      "slots": [
+        {
+          "id": 1764500020002,
+          "start": "06:00",
+          "end": "07:00",
+          "enabled": true,
+          "days": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            false,
+            false
+          ],
+          "sunBased": false
+        },
+        {
+          "id": 1764500020001,
+          "start": "22:00",
+          "end": "23:30",
+          "enabled": true,
+          "days": [
+            true,
+            false,
+            true,
+            false,
+            true,
+            false,
+            true
+          ],
+          "sunBased": false
+        }
+      ],
+      "manualMode": false,
+      "manualEndTime": null,
+      "onUrl": "",
+      "offUrl": "",
+      "enabled": true
+    },
+    {
+      "id": "timer-1764500003456",
+      "name": "Backyard",
+      "slots": [
+        {
+          "id": 1764500030002,
+          "start": "05:45",
+          "end": "08:30",
+          "enabled": true,
+          "days": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "sunBased": false
+        },
+        {
+          "id": 1764999596916,
+          "start": "08:39",
+          "end": "09:39",
+          "enabled": true,
+          "days": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "sunBased": false
+        },
+        {
+          "id": 1764500030003,
+          "start": "12:00",
+          "end": "14:30",
+          "enabled": true,
+          "days": [
+            false,
+            false,
+            false,
+            false,
+            false,
+            true,
+            true
+          ],
+          "sunBased": false
+        },
+        {
+          "id": 1764500030004,
+          "start": "15:00",
+          "end": "17:00",
+          "enabled": true,
+          "days": [
+            true,
+            false,
+            true,
+            false,
+            false,
+            false,
+            false
+          ],
+          "sunBased": false
+        },
+        {
+          "id": 1764500030001,
+          "start": "18:30",
+          "end": "23:00",
+          "enabled": true,
+          "days": [
+            false,
+            false,
+            false,
+            false,
+            true,
+            true,
+            true
+          ],
+          "sunBased": false
+        }
+      ],
+      "manualMode": false,
+      "manualEndTime": null,
+      "onUrl": "",
+      "offUrl": "",
+      "enabled": true
+    },
+    {
+      "id": "timer-1764500001234",
+      "name": "Kitchen 2",
+      "slots": [
+        {
+          "id": 1764500010001,
+          "start": "06:30",
+          "end": "08:45",
+          "enabled": true,
+          "days": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            false,
+            false
+          ],
+          "sunBased": false
+        },
+        {
+          "id": 1764500010003,
+          "start": "12:15",
+          "end": "13:45",
+          "enabled": true,
+          "days": [
+            false,
+            false,
+            false,
+            false,
+            false,
+            true,
+            true
+          ],
+          "sunBased": false
+        },
+        {
+          "id": 1764500010002,
+          "start": "19:21",
+          "end": "19:25",
+          "enabled": true,
+          "days": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "sunBased": false
+        }
+      ],
+      "manualMode": false,
+      "manualEndTime": null,
+      "onUrl": "",
+      "offUrl": "",
+      "enabled": false
+    },
+    {
+      "id": "timer-1766378632412",
+      "name": "Test",
+      "onUrl": "",
+      "offUrl": "",
+      "slots": [
+        {
+          "id": 1764500080001,
+          "start": "07:00",
+          "end": "10:00",
+          "enabled": true,
+          "days": [
+            false,
+            false,
+            false,
+            false,
+            false,
+            true,
+            true
+          ],
+          "sunBased": false
+        },
+        {
+          "id": 1764500080004,
+          "start": "10:30",
+          "end": "11:30",
+          "enabled": true,
+          "days": [
+            false,
+            true,
+            false,
+            true,
+            false,
+            false,
+            false
+          ],
+          "sunBased": false
+        },
+        {
+          "id": 1764500080003,
+          "start": "12:30",
+          "end": "14:00",
+          "enabled": true,
+          "days": [
+            true,
+            false,
+            true,
+            false,
+            true,
+            false,
+            false
+          ],
+          "sunBased": false
+        },
+        {
+          "id": 1764500080002,
+          "start": "16:00",
+          "end": "23:30",
+          "enabled": true,
+          "days": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "sunBased": false
+        }
+      ],
+      "manualMode": false,
+      "manualEndTime": null,
+      "enabled": true
+    }
+  ],
+  "exportDate": "2025-12-26T07:00:32.233Z"
+}
