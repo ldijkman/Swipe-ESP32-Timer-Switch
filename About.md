@@ -1,3 +1,5 @@
+ai is hard, changes lots of times things i did not ask for
+
 description made from the code by Claude ai
 
 
