@@ -376,7 +376,13 @@ how to keep phone / tablet active
 
 - shop kiosk mode?
 - make it an app?
-
+- 
+on linux mint pc with chromium i cannot switch on off from codepen
+but if i save the html code to disk
+and open it as file://
+then it works
+if i leave the pc running
+the timers switch on/off at time
 
 ---
 
