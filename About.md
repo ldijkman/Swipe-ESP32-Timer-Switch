@@ -388,3 +388,10 @@ how to keep phone / tablet active
 - save log button https://codepen.io/ldijkman/pen/WbxNWNo
 - delete did not work https://codepen.io/ldijkman/pen/GgqgRqw
 - bottom bar https://codepen.io/ldijkman/full/dPXPGwo
+
+
+
+
+
+to unlimited
+nono
