@@ -372,7 +372,7 @@ https://www.hackster.io/eltoberino/tobers-timeswitch-for-esp8266-ab3e06
 
 bit hard with android
 trying to figure out
-how to keep it active
+how to keep phone / tablet active
 
 - shop kiosk mode?
 - make it an app?
