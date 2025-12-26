@@ -374,6 +374,9 @@ bit hard with android
 trying to figure out
 how to keep it active
 
+- shop kiosk mode?
+- make it an app?
+
 
 ---
 
