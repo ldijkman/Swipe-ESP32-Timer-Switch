@@ -12,6 +12,7 @@ description made from the code by Claude ai
 
 - save log button https://codepen.io/ldijkman/pen/WbxNWNo
 - delete did not work https://codepen.io/ldijkman/pen/GgqgRqw
+- bottom bar https://codepen.io/ldijkman/full/dPXPGwo
 
 
 
@@ -379,3 +380,4 @@ https://www.hackster.io/eltoberino/tobers-timeswitch-for-esp8266-ab3e06
 
 - save log button https://codepen.io/ldijkman/pen/WbxNWNo
 - delete did not work https://codepen.io/ldijkman/pen/GgqgRqw
+- bottom bar https://codepen.io/ldijkman/full/dPXPGwo
