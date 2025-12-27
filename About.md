@@ -395,9 +395,13 @@ the timers switch on/off at time
 - delete did not work https://codepen.io/ldijkman/pen/GgqgRqw
 - bottom bar https://codepen.io/ldijkman/full/dPXPGwo
 
+---
+ip iframe grid generator
 
+maybe handy to find you tasmota devices ip
 
-
+https://codepen.io/ldijkman/full/ogLgELb
+---
 
 to unlimited
 
