@@ -401,12 +401,8 @@ ip iframe grid generator
 
 maybe handy to find you tasmota devices ip
 
-https://codepen.io/ldijkman/full/ogLgELb
-
-https://codepen.io/ldijkman/full/jErEZBv
-
 click ip for tasmota on off command
-https://codepen.io/ldijkman/full/XJKJZzr
+https://codepen.io/ldijkman/full/raLaJvB
 
 ---
 
