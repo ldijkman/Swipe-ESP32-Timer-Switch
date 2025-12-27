@@ -405,6 +405,9 @@ https://codepen.io/ldijkman/full/ogLgELb
 
 https://codepen.io/ldijkman/full/jErEZBv
 
+click ip for tasmota on off command
+https://codepen.io/ldijkman/full/XJKJZzr
+
 ---
 
 to unlimited
