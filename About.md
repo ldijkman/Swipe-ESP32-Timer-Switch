@@ -403,6 +403,8 @@ maybe handy to find you tasmota devices ip
 
 https://codepen.io/ldijkman/full/ogLgELb
 
+https://codepen.io/ldijkman/full/jErEZBv
+
 ---
 
 to unlimited
