@@ -20,6 +20,7 @@ in your network
 https://ldijkman.github.io/Swipe-ESP32-Timer-Switch/scanner.html
 
 
+ad text to ip and test on off
 
 https://ldijkman.github.io/Swipe-ESP32-Timer-Switch/tasmota_scanner.html
 
