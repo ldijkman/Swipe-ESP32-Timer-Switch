@@ -1,1 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <title>Tasmota ip grid configurator click ip header</title>
+    
+
+  </head>
+    
+  <body>
+  <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tasmota IP Address Grid Generator list  Finder</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .controls {
+            max-width: 800px;
+            margin: 0 auto 30px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .control-group {
+            margin-bottom: 15px;
+        }
+        
+        .control-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .control-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        
+        .ip-inputs {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+        
+        .ip-inputs input {
+            text-align: center;
+        }
+        
+        .range-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        
+        button:hover {
+            background: #0056b3;
+        }
+        
+        .info {
+            text-align: center;
+            color: #666;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        .iframe-wrapper {
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        
+        .iframe-label {
+            background: #333;
+            color: white;
+            padding: 4px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 11px;
+        }
+        
+        .iframe-label a {
+            color: white;
+            text-decoration: none;
+        }
+        
+        .iframe-label a:hover {
+            text-decoration: underline;
+        }
+        
+        iframe {
+            width: 100%;
+            height: 50px;
+            border: none;
+            display: block;
+            transform-origin: top left;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+        }
+        
+        .modal-content {
+            background-color: #fefefe;
+            margin: 2% auto;
+            border: 2px solid #888;
+            border-radius: 8px;
+            width: 90%;
+            height: 90%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .modal-header {
+            background: #333;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 6px 6px 0 0;
+        }
+        
+        .modal-header h2 {
+            margin: 0;
+            font-size: 18px;
+        }
+        
+        .modal-url {
+            background: #f5f5f5;
+            padding: 10px 20px;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .modal-url input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        
+        .copy-btn {
+            padding: 8px 16px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+        
+        .copy-btn:hover {
+            background: #0056b3;
+        }
+        
+        .copy-btn.copied {
+            background: #28a745;
+        }
+        
+        .close {
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 1;
+        }
+        
+        .close:hover {
+            color: #ccc;
+        }
+        
+        .modal-iframe {
+            flex: 1;
+            border: none;
+            width: 142.857%;
+            height: 142.857%;
+            transform: scale(0.7);
+            transform-origin: top left;
+        }
+        
+        .iframe-container {
+            flex: 1;
+            overflow: auto;
+            position: relative;
+        }
+    </style>
+</head>
+<body>
+    <h1>Tasmota<br>IP Address Grid list Generator</h1>
+    
+    <div class="controls">
+        <div class="control-group">
+            <label>Base IP Address:</label>
+            <div class="ip-inputs">
+                <input type="number" id="ip1" value="10" min="0" max="255">
+                <input type="number" id="ip2" value="10" min="0" max="255">
+                <input type="number" id="ip3" value="100" min="0" max="255">
+                <input type="number" id="ip4" value="100" min="0" max="255">
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <label>IP Range:</label>
+            <div class="range-inputs">
+                <div>
+                    <label style="font-weight: normal; font-size: 12px;">Start (last octet):</label>
+                    <input type="number" id="startIP" value="100" min="0" max="255">
+                </div>
+                <div>
+                    <label style="font-weight: normal; font-size: 12px;">End (last octet):</label>
+                    <input type="number" id="endIP" value="130" min="0" max="255">
+                </div>
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <label>Grid Columns:</label>
+            <input type="number" id="columns" value="2" min="1" max="6">
+        </div>
+        
+        <div class="control-group">
+            <label>Iframe Zoom Level: <span id="zoomValue">100%</span></label>
+            <input type="range" id="zoomLevel" min="10" max="100" value="10" step="5" oninput="updateZoom()">
+        </div>
+        
+        <div class="control-group">
+            <label>Iframe Height (px):</label>
+            <input type="number" id="iframeHeight" value="50" min="100" max="1000" step="50">
+        </div>
+        
+        <button onclick="generateGrid()">Generate Grid</button>
+        
+        <div class="info" id="info">Grid will display 31 iframes (10.10.100.100 to 10.10.100.130)</div>
+      <br><br><br>
+      click ip header<br>
+      for larger <br>
+      Tasmota http on/off url links <br>
+      and maybe config
+    </div>
+    
+    <div class="grid-container" id="gridContainer"></div>
+
+    <!-- Modal -->
+    <div id="ipModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">IP Address</h2>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <div class="modal-url">
+                <div style="flex: 1; display: flex; gap: 10px; align-items: center;">
+                    <input type="text" id="modalUrlOn" readonly style="flex: 1;">
+                    <button class="copy-btn" onclick="copyUrl('on')">Copy ON</button>
+                </div>
+            </div>
+            <div class="modal-url" style="border-top: none;">
+                <div style="flex: 1; display: flex; gap: 10px; align-items: center;">
+                    <input type="text" id="modalUrlOff" readonly style="flex: 1;">
+                    <button class="copy-btn" onclick="copyUrl('off')">Copy OFF</button>
+                </div>
+            </div>
+            <div class="iframe-container">
+                <iframe id="modalFrame" class="modal-iframe"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openModal(ipAddress) {
+            const baseUrl = `http://${ipAddress}`;
+            const onUrl = `${baseUrl}/cm?cmnd=Power%20ON`;
+            const offUrl = `${baseUrl}/cm?cmnd=Power%20OFF`;
+            
+            document.getElementById('modalTitle').textContent = ipAddress;
+            document.getElementById('modalUrlOn').value = onUrl;
+            document.getElementById('modalUrlOff').value = offUrl;
+            document.getElementById('modalFrame').src = baseUrl;
+            document.getElementById('ipModal').style.display = 'block';
+        }
+        
+        function closeModal() {
+            document.getElementById('ipModal').style.display = 'none';
+            document.getElementById('modalFrame').src = '';
+        }
+        
+        function copyUrl(type) {
+            const urlInput = type === 'on' ? document.getElementById('modalUrlOn') : document.getElementById('modalUrlOff');
+            urlInput.select();
+            urlInput.setSelectionRange(0, 99999); // For mobile devices
+            
+            navigator.clipboard.writeText(urlInput.value).then(() => {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = 'Copied!';
+                btn.classList.add('copied');
+                
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.classList.remove('copied');
+                }, 2000);
+            });
+        }
+        
+        // Close modal when clicking outside of it
+        window.onclick = function(event) {
+            const modal = document.getElementById('ipModal');
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+        
+        function updateInfo() {
+            const ip1 = document.getElementById('ip1').value;
+            const ip2 = document.getElementById('ip2').value;
+            const ip3 = document.getElementById('ip3').value;
+            const start = parseInt(document.getElementById('startIP').value);
+            const end = parseInt(document.getElementById('endIP').value);
+            const count = Math.max(0, end - start + 1);
+            
+            document.getElementById('info').textContent = 
+                `Grid will display ${count} iframe${count !== 1 ? 's' : ''} (${ip1}.${ip2}.${ip3}.${start} to ${ip1}.${ip2}.${ip3}.${end})`;
+        }
+        
+        function updateZoom() {
+            const zoomLevel = document.getElementById('zoomLevel').value;
+            const zoomPercent = zoomLevel + '%';
+            document.getElementById('zoomValue').textContent = zoomPercent;
+            
+            const iframes = document.querySelectorAll('iframe');
+            const scale = zoomLevel / 100;
+            
+            iframes.forEach(iframe => {
+                iframe.style.transform = `scale(${scale})`;
+                iframe.style.width = `${100 / scale}%`;
+                iframe.style.height = `${parseInt(document.getElementById('iframeHeight').value) / scale}px`;
+            });
+        }
+        
+        function generateGrid() {
+            const ip1 = document.getElementById('ip1').value;
+            const ip2 = document.getElementById('ip2').value;
+            const ip3 = document.getElementById('ip3').value;
+            const start = parseInt(document.getElementById('startIP').value);
+            const end = parseInt(document.getElementById('endIP').value);
+            const columns = parseInt(document.getElementById('columns').value);
+            const iframeHeight = parseInt(document.getElementById('iframeHeight').value);
+            const zoomLevel = parseInt(document.getElementById('zoomLevel').value);
+            
+            const gridContainer = document.getElementById('gridContainer');
+            gridContainer.innerHTML = '';
+            gridContainer.style.gridTemplateColumns = `repeat(${columns}, 1fr)`;
+            
+            if (start > end) {
+                alert('Start IP must be less than or equal to End IP');
+                return;
+            }
+            
+            const scale = zoomLevel / 100;
+            
+            for (let i = start; i <= end; i++) {
+                const ipAddress = `${ip1}.${ip2}.${ip3}.${i}`;
+                
+                const wrapper = document.createElement('div');
+                wrapper.className = 'iframe-wrapper';
+                wrapper.style.height = `${iframeHeight + 20}px`; // +20 for smaller label
+                
+                const label = document.createElement('div');
+                label.className = 'iframe-label';
+                
+                const link = document.createElement('a');
+                link.href = '#';
+                link.textContent = ipAddress;
+                link.onclick = (e) => {
+                    e.preventDefault();
+                    openModal(ipAddress);
+                };
+                label.appendChild(link);
+                
+                const iframe = document.createElement('iframe');
+                iframe.src = `http://${ipAddress}`;
+                iframe.style.height = `${iframeHeight / scale}px`;
+                iframe.style.width = `${100 / scale}%`;
+                iframe.style.transform = `scale(${scale})`;
+                
+                wrapper.appendChild(label);
+                wrapper.appendChild(iframe);
+                gridContainer.appendChild(wrapper);
+            }
+        }
+        
+        // Add event listeners to update info
+        document.getElementById('ip1').addEventListener('input', updateInfo);
+        document.getElementById('ip2').addEventListener('input', updateInfo);
+        document.getElementById('ip3').addEventListener('input', updateInfo);
+        document.getElementById('startIP').addEventListener('input', updateInfo);
+        document.getElementById('endIP').addEventListener('input', updateInfo);
+        
+        // Generate initial grid on page load
+        window.addEventListener('load', generateGrid);
+    </script>
+  
+  <br><br>
+  
+  
+  <a href="https://codepen.io/ldijkman/full/dPXPGwo" target="_blank" rel="noopener noreferrer">
+  to unlimited timer schedule<br><br>
+
+  https://codepen.io/ldijkman/pen/dPXPGwo
+</a>
+<br><br>
+
+  
+</body>
+</html>
+    
+  </body>
+  
+</html>
 
