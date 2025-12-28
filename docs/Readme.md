@@ -5,4 +5,6 @@ https://htmlpreview.github.io/?https://raw.githubusercontent.com/ldijkman/Swipe-
 
 https://htmlpreview.github.io/?https://raw.githubusercontent.com/ldijkman/Swipe-ESP32-Timer-Switch/main/docs/index.html
 
-https://htmlpreview.github.io/?https://raw.githubusercontent.com/ldijkman/Swipe-ESP32-Timer-Switch/main/docs/index.html
+
+
+https://ldijkman.github.io/Swipe-ESP32-Timer-Switch/
