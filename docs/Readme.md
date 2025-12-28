@@ -8,3 +8,8 @@ https://htmlpreview.github.io/?https://raw.githubusercontent.com/ldijkman/Swipe-
 
 
 https://ldijkman.github.io/Swipe-ESP32-Timer-Switch/
+
+
+---
+https://ldijkman.github.io/Swipe-ESP32-Timer-Switch/scanner.html
+
