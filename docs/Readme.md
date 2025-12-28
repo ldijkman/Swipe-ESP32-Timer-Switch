@@ -19,7 +19,7 @@ in your network
 
 https://ldijkman.github.io/Swipe-ESP32-Timer-Switch/scanner.html
 
-next not working 
 
-https://ldijkman.github.io/Swipe-ESP32-Timer-Switch/Scanner2.html
+
+https://ldijkman.github.io/Swipe-ESP32-Timer-Switch/tasmota_scanner.html
 
