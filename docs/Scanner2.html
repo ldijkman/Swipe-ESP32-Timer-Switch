@@ -3,189 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tasmota Device Scanner</title>
-    
-    <!-- Favicons -->
-    <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/ldijkman/Swipe-ESP32-Timer-Switch/refs/heads/main/android_icon.png">
-    <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/ldijkman/Swipe-ESP32-Timer-Switch/refs/heads/main/android_icon.png">
-    
-    <!-- Android/Mobile Icons -->
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#007bff">
-    
+    <title>Tasmota IP Address Grid list Generator</title>
     <style>
         body {
-            margin: 0;
-            padding: 20px;
             font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
         }
-        
         h1 {
-            text-align: center;
             color: #333;
-            margin-bottom: 10px;
         }
-        
         .controls {
-            max-width: 800px;
-            margin: 0 auto 30px;
             background: white;
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        
         .control-group {
             margin-bottom: 15px;
         }
-        
-        .control-group label {
-            display: block;
-            margin-bottom: 5px;
+        label {
+            display: inline-block;
+            width: 200px;
             font-weight: bold;
-            color: #333;
         }
-        
-        .control-group input {
-            width: 100%;
+        input[type="text"], input[type="number"] {
             padding: 8px;
             border: 1px solid #ddd;
             border-radius: 4px;
-            font-size: 14px;
-            box-sizing: border-box;
+            width: 200px;
         }
-        
-        .ip-inputs {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-        }
-        
-        .range-inputs {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-        
         button {
-            width: 100%;
-            padding: 12px;
-            background: #007bff;
+            background-color: #4CAF50;
             color: white;
+            padding: 10px 20px;
             border: none;
             border-radius: 4px;
-            font-size: 16px;
-            font-weight: bold;
             cursor: pointer;
-            margin-top: 10px;
+            font-size: 16px;
         }
-        
         button:hover {
-            background: #0056b3;
+            background-color: #45a049;
         }
-        
-        button:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
-        
-        .scan-info {
-            text-align: center;
-            color: #666;
-            margin-top: 10px;
-            font-size: 14px;
-        }
-        
-        .progress-bar {
-            width: 100%;
-            height: 20px;
-            background: #e0e0e0;
-            border-radius: 10px;
-            overflow: hidden;
-            margin: 10px 0;
-            display: none;
-        }
-        
-        .progress-fill {
-            height: 100%;
-            background: #007bff;
-            width: 0%;
-            transition: width 0.3s;
-        }
-        
-        .grid-controls {
+        #grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
             gap: 10px;
-            margin-top: 15px;
+            margin-top: 20px;
         }
-        
-        .grid-container {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            max-width: 1600px;
-            margin: 0 auto;
-        }
-        
-        .iframe-wrapper {
+        .grid-item {
             background: white;
-            border: 2px solid #ddd;
             border-radius: 8px;
             overflow: hidden;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            position: relative;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        
-        .iframe-wrapper.online {
-            border-color: #28a745;
-        }
-        
-        .iframe-label {
-            background: #333;
+        .ip-header {
+            background-color: #2196F3;
             color: white;
-            padding: 4px;
+            padding: 10px;
             text-align: center;
+            cursor: pointer;
             font-weight: bold;
-            font-size: 11px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
         }
-        
-        .iframe-label.online {
-            background: #28a745;
+        .ip-header:hover {
+            background-color: #0b7dda;
         }
-        
-        .iframe-label a {
-            color: white;
-            text-decoration: none;
-            flex: 1;
-        }
-        
-        .iframe-label a:hover {
-            text-decoration: underline;
-        }
-        
-        .device-name {
-            font-size: 10px;
-            opacity: 0.9;
-            margin-right: 5px;
-        }
-        
         iframe {
             width: 100%;
-            height: 50px;
             border: none;
             display: block;
-            transform-origin: top left;
         }
-        
-        input[type="range"] {
-            width: 100%;
+        .info {
+            background-color: #e3f2fd;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
         }
-        
+
+        /* Modal styles */
         .modal {
             display: none;
             position: fixed;
@@ -194,421 +91,287 @@
             top: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0,0,0,0.7);
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
         }
-        
         .modal-content {
             background-color: #fefefe;
-            margin: 2% auto;
-            border: 2px solid #888;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
             border-radius: 8px;
-            width: 90%;
-            height: 90%;
-            display: flex;
-            flex-direction: column;
+            width: 80%;
+            max-width: 600px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
-        
-        .modal-header {
-            background: #333;
-            color: white;
-            padding: 15px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-radius: 6px 6px 0 0;
-        }
-        
-        .modal-header h2 {
-            margin: 0;
-            font-size: 18px;
-        }
-        
-        .modal-url {
-            background: #f5f5f5;
-            padding: 10px 20px;
-            border-bottom: 1px solid #ddd;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .modal-url input {
-            flex: 1;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-family: monospace;
-            font-size: 14px;
-        }
-        
-        .copy-btn {
-            padding: 8px 16px;
-            background: #007bff;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            white-space: nowrap;
-        }
-        
-        .copy-btn:hover {
-            background: #0056b3;
-        }
-        
-        .copy-btn.copied {
-            background: #28a745;
-        }
-        
         .close {
-            color: white;
+            color: #aaa;
+            float: right;
             font-size: 28px;
             font-weight: bold;
             cursor: pointer;
-            line-height: 1;
         }
-        
-        .close:hover {
-            color: #ccc;
+        .close:hover,
+        .close:focus {
+            color: #000;
         }
-        
-        .modal-iframe {
+        .modal h2 {
+            margin-top: 0;
+            color: #333;
+        }
+        .url-section {
+            margin: 15px 0;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+        }
+        .url-section h3 {
+            margin-top: 0;
+            color: #2196F3;
+        }
+        .url-display {
+            background-color: white;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin: 10px 0;
+            word-break: break-all;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .copy-btn {
+            background-color: #2196F3;
             flex: 1;
-            border: none;
-            width: 142.857%;
-            height: 142.857%;
-            transform: scale(0.7);
-            transform-origin: top left;
         }
-        
-        .iframe-container {
+        .copy-btn:hover {
+            background-color: #0b7dda;
+        }
+        .test-btn {
+            background-color: #FF9800;
             flex: 1;
-            overflow: auto;
-            position: relative;
+        }
+        .test-btn:hover {
+            background-color: #e68900;
+        }
+        .test-result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 14px;
+            display: none;
+        }
+        .test-result.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .test-result.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .test-result.loading {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
         }
     </style>
 </head>
 <body>
-    <h1>Tasmota Device Scanner</h1>
+    <h1>📱 Tasmota IP Address Grid list Generator</h1>
     
+    <div class="info">
+        <strong>click ip header</strong> for larger Tasmota http on/off url links and maybe config
+    </div>
+
     <div class="controls">
         <div class="control-group">
-            <label>IP Range to Scan:</label>
-            <div class="ip-inputs">
-                <input type="number" id="ip1" value="10" min="0" max="255">
-                <input type="number" id="ip2" value="10" min="0" max="255">
-                <input type="number" id="ip3" value="100" min="0" max="255">
-            </div>
+            <label for="baseIp">Base IP Address:</label>
+            <input type="text" id="baseIp" value="10.10.100." placeholder="e.g., 192.168.1.">
         </div>
-        
         <div class="control-group">
-            <label>Scan Range (Last Octet):</label>
-            <div class="range-inputs">
-                <div>
-                    <label style="font-weight: normal; font-size: 12px;">Start:</label>
-                    <input type="number" id="startIP" value="100" min="1" max="254">
-                </div>
-                <div>
-                    <label style="font-weight: normal; font-size: 12px;">End:</label>
-                    <input type="number" id="endIP" value="130" min="1" max="254">
-                </div>
-            </div>
+            <label for="startRange">Start (last octet):</label>
+            <input type="number" id="startRange" value="100" min="1" max="254">
         </div>
-        
-        <button id="scanBtn" onclick="scanForDevices()">Scan for Tasmota Devices</button>
-        
-        <div class="progress-bar" id="progressBar">
-            <div class="progress-fill" id="progressFill"></div>
-        </div>
-        
-        <div class="scan-info" id="scanInfo">Click "Scan" to find Tasmota devices</div>
-        
-        <div class="grid-controls">
-            <div class="control-group">
-                <label>Grid Columns:</label>
-                <input type="number" id="columns" value="2" min="1" max="6">
-            </div>
-            
-            <div class="control-group">
-                <label>Zoom: <span id="zoomValue">10%</span></label>
-                <input type="range" id="zoomLevel" min="10" max="100" value="10" step="5" oninput="updateZoom()">
-            </div>
-        </div>
-        
         <div class="control-group">
-            <label>Iframe Height (px):</label>
-            <input type="number" id="iframeHeight" value="50" min="20" max="1000" step="10">
+            <label for="endRange">End (last octet):</label>
+            <input type="number" id="endRange" value="130" min="1" max="254">
         </div>
-        
-        <button onclick="regenerateGrid()">Update Grid Display</button>
+        <div class="control-group">
+            <label for="columns">Grid Columns:</label>
+            <input type="number" id="columns" value="5" min="1" max="10">
+        </div>
+        <div class="control-group">
+            <label for="zoom">Iframe Zoom Level:</label>
+            <input type="number" id="zoom" value="100" min="10" max="200" step="10">%
+        </div>
+        <div class="control-group">
+            <label for="iframeHeight">Iframe Height (px):</label>
+            <input type="number" id="iframeHeight" value="400" min="100" max="1000" step="50">
+        </div>
+        <button onclick="generateGrid()">Generate Grid</button>
     </div>
-    
-    <div class="grid-container" id="gridContainer"></div>
+
+    <div id="gridInfo"></div>
+    <div id="grid"></div>
 
     <!-- Modal -->
-    <div id="ipModal" class="modal">
+    <div id="urlModal" class="modal">
         <div class="modal-content">
-            <div class="modal-header">
-                <h2 id="modalTitle">IP Address</h2>
-                <span class="close" onclick="closeModal()">&times;</span>
-            </div>
-            <div class="modal-url">
-                <div style="flex: 1; display: flex; gap: 10px; align-items: center;">
-                    <input type="text" id="modalUrlOn" readonly style="flex: 1;">
-                    <button class="copy-btn" onclick="copyUrl('on')">Copy</button>
-                    <button class="copy-btn" style="background: #28a745;" onclick="testCommand('on')">Test ON</button>
+            <span class="close">&times;</span>
+            <h2>IP Address: <span id="modalIp"></span></h2>
+            
+            <div class="url-section">
+                <h3>🟢 ON Command</h3>
+                <div class="url-display" id="onUrl"></div>
+                <div class="button-group">
+                    <button class="copy-btn" onclick="copyUrl('on')">📋 Copy ON</button>
+                    <button class="test-btn" onclick="testUrl('on')">🧪 Test ON</button>
                 </div>
+                <div class="test-result" id="onTestResult"></div>
             </div>
-            <div class="modal-url" style="border-top: none;">
-                <div style="flex: 1; display: flex; gap: 10px; align-items: center;">
-                    <input type="text" id="modalUrlOff" readonly style="flex: 1;">
-                    <button class="copy-btn" onclick="copyUrl('off')">Copy</button>
-                    <button class="copy-btn" style="background: #dc3545;" onclick="testCommand('off')">Test OFF</button>
+
+            <div class="url-section">
+                <h3>🔴 OFF Command</h3>
+                <div class="url-display" id="offUrl"></div>
+                <div class="button-group">
+                    <button class="copy-btn" onclick="copyUrl('off')">📋 Copy OFF</button>
+                    <button class="test-btn" onclick="testUrl('off')">🧪 Test OFF</button>
                 </div>
-            </div>
-            <div class="iframe-container">
-                <iframe id="modalFrame" class="modal-iframe"></iframe>
+                <div class="test-result" id="offTestResult"></div>
             </div>
         </div>
+    </div>
+
+    <div style="margin-top: 30px; padding: 20px; background: white; border-radius: 8px;">
+        <a href="https://codepen.io/ldijkman/full/dPXPGwo" target="_blank" style="color: #2196F3; text-decoration: none; font-size: 18px;">
+            ⏰ to unlimited timer schedule
+        </a>
     </div>
 
     <script>
-        let discoveredDevices = [];
-        
-        function openModal(ipAddress) {
-            const baseUrl = `http://${ipAddress}`;
-            const onUrl = `${baseUrl}/cm?cmnd=Power%20ON`;
-            const offUrl = `${baseUrl}/cm?cmnd=Power%20OFF`;
-            
-            document.getElementById('modalTitle').textContent = ipAddress;
-            document.getElementById('modalUrlOn').value = onUrl;
-            document.getElementById('modalUrlOff').value = offUrl;
-            document.getElementById('modalFrame').src = baseUrl;
-            document.getElementById('ipModal').style.display = 'block';
-        }
-        
-        function closeModal() {
-            document.getElementById('ipModal').style.display = 'none';
-            document.getElementById('modalFrame').src = '';
-        }
-        
-        function copyUrl(type) {
-            const urlInput = type === 'on' ? document.getElementById('modalUrlOn') : document.getElementById('modalUrlOff');
-            urlInput.select();
-            urlInput.setSelectionRange(0, 99999);
-            
-            navigator.clipboard.writeText(urlInput.value).then(() => {
-                const btn = event.target;
-                const originalText = btn.textContent;
-                btn.textContent = 'Copied!';
-                btn.classList.add('copied');
-                
-                setTimeout(() => {
-                    btn.textContent = originalText;
-                    btn.classList.remove('copied');
-                }, 2000);
-            });
-        }
-        
-        async function testCommand(type) {
-            const url = type === 'on' ? document.getElementById('modalUrlOn').value : document.getElementById('modalUrlOff').value;
-            const btn = event.target;
-            const originalText = btn.textContent;
-            
-            btn.textContent = 'Sending...';
-            btn.disabled = true;
-            
-            try {
-                const response = await fetch(url, { method: 'GET' });
-                
-                if (response.ok) {
-                    btn.textContent = '✓ Success';
-                    btn.style.background = '#28a745';
-                    
-                    // Reload the iframe to show updated state
-                    document.getElementById('modalFrame').src = document.getElementById('modalFrame').src;
-                } else {
-                    btn.textContent = '✗ Failed';
-                    btn.style.background = '#dc3545';
-                }
-            } catch (error) {
-                btn.textContent = '✗ Error';
-                btn.style.background = '#dc3545';
-                console.error('Command failed:', error);
-            }
-            
-            setTimeout(() => {
-                btn.textContent = originalText;
-                btn.style.background = type === 'on' ? '#28a745' : '#dc3545';
-                btn.disabled = false;
-            }, 2000);
-        }
-        
-        window.onclick = function(event) {
-            const modal = document.getElementById('ipModal');
-            if (event.target == modal) {
-                closeModal();
-            }
-        }
-        
-        function updateZoom() {
-            const zoomLevel = document.getElementById('zoomLevel').value;
-            const zoomPercent = zoomLevel + '%';
-            document.getElementById('zoomValue').textContent = zoomPercent;
-            
-            const iframes = document.querySelectorAll('.grid-container iframe');
-            const scale = zoomLevel / 100;
-            const iframeHeight = parseInt(document.getElementById('iframeHeight').value);
-            
-            iframes.forEach(iframe => {
-                iframe.style.transform = `scale(${scale})`;
-                iframe.style.width = `${100 / scale}%`;
-                iframe.style.height = `${iframeHeight / scale}px`;
-            });
-        }
-        
-        async function checkTasmotaDevice(ip) {
-            try {
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 2000); // 2 second timeout
-                
-                const response = await fetch(`http://${ip}/cm?cmnd=Status%200`, {
-                    method: 'GET',
-                    signal: controller.signal
-                });
-                
-                clearTimeout(timeoutId);
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    // Check if it's actually a Tasmota device
-                    if (data.Status || data.StatusNET || data.StatusFWR) {
-                        return {
-                            ip: ip,
-                            online: true,
-                            name: data.Status?.DeviceName || data.Status?.FriendlyName?.[0] || 'Unknown'
-                        };
-                    }
-                }
-            } catch (error) {
-                // Device not responding or not Tasmota
-            }
-            return null;
-        }
-        
-        async function scanForDevices() {
-            const ip1 = document.getElementById('ip1').value;
-            const ip2 = document.getElementById('ip2').value;
-            const ip3 = document.getElementById('ip3').value;
-            const start = parseInt(document.getElementById('startIP').value);
-            const end = parseInt(document.getElementById('endIP').value);
-            
-            if (start > end) {
-                alert('Start IP must be less than or equal to End IP');
-                return;
-            }
-            
-            const scanBtn = document.getElementById('scanBtn');
-            const progressBar = document.getElementById('progressBar');
-            const progressFill = document.getElementById('progressFill');
-            const scanInfo = document.getElementById('scanInfo');
-            
-            scanBtn.disabled = true;
-            scanBtn.textContent = 'Scanning...';
-            progressBar.style.display = 'block';
-            discoveredDevices = [];
-            
-            const totalIPs = end - start + 1;
-            let scanned = 0;
-            
-            scanInfo.textContent = `Scanning ${totalIPs} IP addresses...`;
-            
-            // Scan in batches to avoid overwhelming the browser
-            const batchSize = 10;
-            for (let i = start; i <= end; i += batchSize) {
-                const batch = [];
-                for (let j = i; j < Math.min(i + batchSize, end + 1); j++) {
-                    const ip = `${ip1}.${ip2}.${ip3}.${j}`;
-                    batch.push(checkTasmotaDevice(ip));
-                }
-                
-                const results = await Promise.all(batch);
-                results.forEach(result => {
-                    if (result) {
-                        discoveredDevices.push(result);
-                    }
-                });
-                
-                scanned += batch.length;
-                const progress = (scanned / totalIPs) * 100;
-                progressFill.style.width = progress + '%';
-                scanInfo.textContent = `Scanned ${scanned}/${totalIPs} - Found ${discoveredDevices.length} Tasmota device(s)`;
-            }
-            
-            scanBtn.disabled = false;
-            scanBtn.textContent = 'Scan for Tasmota Devices';
-            progressBar.style.display = 'none';
-            
-            if (discoveredDevices.length > 0) {
-                scanInfo.textContent = `Found ${discoveredDevices.length} Tasmota device(s)! Generating grid...`;
-                generateGrid();
-            } else {
-                scanInfo.textContent = `No Tasmota devices found in the range ${ip1}.${ip2}.${ip3}.${start}-${end}`;
-            }
-        }
-        
-        function regenerateGrid() {
-            if (discoveredDevices.length > 0) {
-                generateGrid();
-            }
-        }
-        
+        let currentIp = '';
+
         function generateGrid() {
+            const baseIp = document.getElementById('baseIp').value;
+            const startRange = parseInt(document.getElementById('startRange').value);
+            const endRange = parseInt(document.getElementById('endRange').value);
             const columns = parseInt(document.getElementById('columns').value);
+            const zoom = parseInt(document.getElementById('zoom').value);
             const iframeHeight = parseInt(document.getElementById('iframeHeight').value);
-            const zoomLevel = parseInt(document.getElementById('zoomLevel').value);
-            
-            const gridContainer = document.getElementById('gridContainer');
-            gridContainer.innerHTML = '';
-            gridContainer.style.gridTemplateColumns = `repeat(${columns}, 1fr)`;
-            
-            const scale = zoomLevel / 100;
-            
-            discoveredDevices.forEach(device => {
-                const wrapper = document.createElement('div');
-                wrapper.className = 'iframe-wrapper online';
-                wrapper.style.height = `${iframeHeight + 20}px`;
+
+            const grid = document.getElementById('grid');
+            grid.innerHTML = '';
+            grid.style.gridTemplateColumns = `repeat(${columns}, 1fr)`;
+
+            const count = endRange - startRange + 1;
+            document.getElementById('gridInfo').innerHTML = 
+                `<p><strong>Grid will display ${count} iframes (${baseIp}${startRange} to ${baseIp}${endRange})</strong></p>`;
+
+            for (let i = startRange; i <= endRange; i++) {
+                const ip = baseIp + i;
+                const gridItem = document.createElement('div');
+                gridItem.className = 'grid-item';
                 
-                const label = document.createElement('div');
-                label.className = 'iframe-label online';
-                
-                if (device.name && device.name !== 'Unknown') {
-                    const nameSpan = document.createElement('span');
-                    nameSpan.className = 'device-name';
-                    nameSpan.textContent = device.name;
-                    label.appendChild(nameSpan);
-                }
-                
-                const link = document.createElement('a');
-                link.href = '#';
-                link.textContent = device.ip;
-                link.onclick = (e) => {
-                    e.preventDefault();
-                    openModal(device.ip);
-                };
-                label.appendChild(link);
+                const header = document.createElement('div');
+                header.className = 'ip-header';
+                header.textContent = ip;
+                header.onclick = () => openModal(ip);
                 
                 const iframe = document.createElement('iframe');
-                iframe.src = `http://${device.ip}`;
-                iframe.style.height = `${iframeHeight / scale}px`;
-                iframe.style.width = `${100 / scale}%`;
-                iframe.style.transform = `scale(${scale})`;
+                iframe.src = `http://${ip}`;
+                iframe.style.height = iframeHeight + 'px';
+                iframe.style.zoom = zoom + '%';
                 
-                wrapper.appendChild(label);
-                wrapper.appendChild(iframe);
-                gridContainer.appendChild(wrapper);
+                gridItem.appendChild(header);
+                gridItem.appendChild(iframe);
+                grid.appendChild(gridItem);
+            }
+        }
+
+        function openModal(ip) {
+            currentIp = ip;
+            const modal = document.getElementById('urlModal');
+            document.getElementById('modalIp').textContent = ip;
+            
+            const onUrl = `http://${ip}/cm?cmnd=Power%20ON`;
+            const offUrl = `http://${ip}/cm?cmnd=Power%20OFF`;
+            
+            document.getElementById('onUrl').textContent = onUrl;
+            document.getElementById('offUrl').textContent = offUrl;
+            
+            // Hide test results
+            document.getElementById('onTestResult').style.display = 'none';
+            document.getElementById('offTestResult').style.display = 'none';
+            
+            modal.style.display = 'block';
+        }
+
+        function copyUrl(type) {
+            const url = type === 'on' ? 
+                document.getElementById('onUrl').textContent : 
+                document.getElementById('offUrl').textContent;
+            
+            navigator.clipboard.writeText(url).then(() => {
+                alert(`${type.toUpperCase()} URL copied to clipboard!`);
             });
         }
+
+        async function testUrl(type) {
+            const url = type === 'on' ? 
+                document.getElementById('onUrl').textContent : 
+                document.getElementById('offUrl').textContent;
+            
+            const resultDiv = document.getElementById(type + 'TestResult');
+            resultDiv.className = 'test-result loading';
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = `Testing ${type.toUpperCase()} command...`;
+            
+            try {
+                // Open URL in a new window/tab
+                const testWindow = window.open(url, '_blank', 'width=600,height=400');
+                
+                // Also try to fetch (may be blocked by CORS)
+                const response = await fetch(url, {
+                    mode: 'no-cors',
+                    method: 'GET'
+                });
+                
+                resultDiv.className = 'test-result success';
+                resultDiv.textContent = `✅ ${type.toUpperCase()} command sent successfully! Check the new window for response.`;
+                
+            } catch (error) {
+                resultDiv.className = 'test-result success';
+                resultDiv.textContent = `✅ ${type.toUpperCase()} command sent (opened in new window). Note: CORS may prevent direct response.`;
+            }
+            
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                resultDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        // Modal close functionality
+        const modal = document.getElementById('urlModal');
+        const span = document.getElementsByClassName('close')[0];
+
+        span.onclick = function() {
+            modal.style.display = 'none';
+        }
+
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        // Generate initial grid on page load
+        window.onload = generateGrid;
     </script>
 </body>
 </html>
