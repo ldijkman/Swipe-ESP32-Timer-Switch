@@ -19,3 +19,5 @@ in your network
 
 https://ldijkman.github.io/Swipe-ESP32-Timer-Switch/scanner.html
 
+https://ldijkman.github.io/Swipe-ESP32-Timer-Switch/Scanner2.html
+
