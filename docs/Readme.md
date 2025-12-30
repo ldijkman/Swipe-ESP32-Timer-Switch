@@ -18,7 +18,9 @@ add text to ip and copy/test on/off
 
 https://ldijkman.github.io/Swipe-ESP32-Timer-Switch/tasmota_scanner.html
 
+---
 
+some ip presets to choose from
 
 https://ldijkman.github.io/Swipe-ESP32-Timer-Switch/Tasmota_scanner_enhanced.html
 
