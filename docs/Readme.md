@@ -9,6 +9,7 @@ https://ldijkman.github.io/Swipe-ESP32-Timer-Switch/
 
 tasmota scanner web html 
 
+
 next shows grid of iframes of ip range
 
 maybe handy to find tasmota devices
@@ -21,6 +22,8 @@ https://ldijkman.github.io/Swipe-ESP32-Timer-Switch/tasmota_scanner.html
 ---
 
 some ip presets to choose from
+
+and store some more settings
 
 https://ldijkman.github.io/Swipe-ESP32-Timer-Switch/Tasmota_scanner_enhanced.html
 
