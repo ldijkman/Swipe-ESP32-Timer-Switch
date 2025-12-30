@@ -88,6 +88,23 @@
         .ip-header:hover {
             background-color: #0b7dda;
         }
+        .name-input {
+            width: calc(100% - 20px);
+            padding: 5px;
+            margin: 5px 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 11px;
+            text-align: center;
+        }
+        .device-name {
+            background-color: #4CAF50;
+            color: white;
+            padding: 5px 10px;
+            text-align: center;
+            font-size: 11px;
+            font-weight: normal;
+        }
         iframe {
             width: 100%;
             border: none;
@@ -311,6 +328,7 @@
     <script>
         let currentIp = '';
         const STORAGE_KEY = 'tasmotaGridSettings';
+        const NAMES_KEY = 'tasmotaDeviceNames';
 
         // Default settings
         const defaultSettings = {
@@ -321,6 +339,34 @@
             zoom: 100,
             iframeHeight: 400
         };
+
+        // Save device name
+        function saveDeviceName(ip, name) {
+            try {
+                const names = loadDeviceNames();
+                if (name.trim() === '') {
+                    delete names[ip];
+                } else {
+                    names[ip] = name.trim();
+                }
+                localStorage.setItem(NAMES_KEY, JSON.stringify(names));
+                console.log('Device name saved:', ip, name);
+                generateGrid(); // Refresh to show the name
+            } catch (e) {
+                console.error('Error saving device name:', e);
+            }
+        }
+
+        // Load device names
+        function loadDeviceNames() {
+            try {
+                const saved = localStorage.getItem(NAMES_KEY);
+                return saved ? JSON.parse(saved) : {};
+            } catch (e) {
+                console.error('Error loading device names:', e);
+                return {};
+            }
+        }
 
         // Load settings from localStorage
         function loadSettings() {
@@ -412,6 +458,9 @@
             document.getElementById('gridInfo').innerHTML = 
                 `<p><strong>Grid will display ${count} iframes (${baseIp}${startRange} to ${baseIp}${endRange})</strong></p>`;
 
+            // Load saved names
+            const savedNames = loadDeviceNames();
+
             for (let i = startRange; i <= endRange; i++) {
                 const ip = baseIp + i;
                 const gridItem = document.createElement('div');
@@ -422,12 +471,33 @@
                 header.textContent = ip;
                 header.onclick = () => openModal(ip);
                 
+                // Add name display if exists
+                const savedName = savedNames[ip];
+                if (savedName) {
+                    const nameDisplay = document.createElement('div');
+                    nameDisplay.className = 'device-name';
+                    nameDisplay.textContent = savedName;
+                    gridItem.appendChild(nameDisplay);
+                }
+                
+                gridItem.appendChild(header);
+                
+                // Add name input field
+                const nameInput = document.createElement('input');
+                nameInput.type = 'text';
+                nameInput.className = 'name-input';
+                nameInput.placeholder = 'Enter device name...';
+                nameInput.value = savedName || '';
+                nameInput.onchange = () => saveDeviceName(ip, nameInput.value);
+                nameInput.onclick = (e) => e.stopPropagation(); // Prevent modal opening
+                
+                gridItem.appendChild(nameInput);
+                
                 const iframe = document.createElement('iframe');
                 iframe.src = `http://${ip}`;
                 iframe.style.height = iframeHeight + 'px';
                 iframe.style.zoom = zoom + '%';
                 
-                gridItem.appendChild(header);
                 gridItem.appendChild(iframe);
                 grid.appendChild(gridItem);
             }
