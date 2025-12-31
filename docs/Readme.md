@@ -32,6 +32,6 @@ https://ldijkman.github.io/Swipe-ESP32-Timer-Switch/Tasmota_scanner_enhanced.htm
 
 https://ldijkman.github.io/Swipe-ESP32-Timer-Switch/Scan_wifi_ip.html
 
-
+https://ldijkman.github.io/Swipe-ESP32-Timer-Switch/Scan-wifi.html
 
 
