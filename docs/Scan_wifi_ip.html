@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tasmota IP Address Grid list Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+        }
+        .controls {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .control-group {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        label {
+            display: inline-block;
+            width: 180px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        input[type="text"], input[type="number"], select {
+            padding: 6px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 200px;
+            font-size: 14px;
+        }
+        select {
+            cursor: pointer;
+        }
+        .ip-input-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .reset-btn {
+            background-color: #f44336;
+            margin-left: 10px;
+        }
+        .reset-btn:hover {
+            background-color: #da190b;
+        }
+        #grid {
+            display: grid;
+            gap: 8px;
+            margin-top: 15px;
+        }
+        .grid-item {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .ip-header {
+            background-color: #2196F3;
+            color: white;
+            padding: 8px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 13px;
+        }
+        .ip-header:hover {
+            background-color: #0b7dda;
+        }
+        .device-name {
+            background-color: #4CAF50;
+            color: white;
+            padding: 4px 8px;
+            text-align: center;
+            font-size: 11px;
+            font-weight: normal;
+        }
+        iframe {
+            width: 100%;
+            border: none;
+            display: block;
+        }
+        .info {
+            background-color: #e3f2fd;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 3% auto;
+            padding: 15px;
+            border: 1px solid #888;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 900px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 20px;
+        }
+        .close:hover,
+        .close:focus {
+            color: #000;
+        }
+        .modal h2 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: #333;
+            font-size: 18px;
+        }
+        .device-name-section {
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+        }
+        .device-name-section label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 13px;
+            width: auto;
+        }
+        .device-name-group {
+            display: flex;
+            gap: 8px;
+        }
+        .device-name-input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .save-name-btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+        .save-name-btn:hover {
+            background-color: #45a049;
+        }
+        .preview-section {
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+        }
+        .preview-section h3 {
+            margin: 0 0 8px 0;
+            color: #2196F3;
+            font-size: 14px;
+        }
+        .preview-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 8px;
+            align-items: center;
+        }
+        .preview-controls label {
+            font-size: 12px;
+            font-weight: normal;
+            width: auto;
+        }
+        .preview-controls input {
+            width: 80px;
+            padding: 4px;
+            font-size: 12px;
+        }
+        .open-window-btn {
+            background-color: #9C27B0;
+            color: white;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+        .open-window-btn:hover {
+            background-color: #7B1FA2;
+        }
+        .preview-iframe {
+            width: 100%;
+            height: 300px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .url-section {
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+        }
+        .url-section h3 {
+            margin-top: 0;
+            margin-bottom: 6px;
+            color: #2196F3;
+            font-size: 14px;
+        }
+        .url-display {
+            background-color: white;
+            padding: 6px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin: 6px 0;
+            word-break: break-all;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .button-group {
+            display: flex;
+            gap: 8px;
+            margin-top: 6px;
+        }
+        .copy-btn {
+            background-color: #2196F3;
+            flex: 1;
+            padding: 6px 12px;
+            font-size: 13px;
+        }
+        .copy-btn:hover {
+            background-color: #0b7dda;
+        }
+        .test-btn {
+            background-color: #FF9800;
+            flex: 1;
+            padding: 6px 12px;
+            font-size: 13px;
+        }
+        .test-btn:hover {
+            background-color: #e68900;
+        }
+        .test-result {
+            margin-top: 6px;
+            padding: 6px;
+            border-radius: 4px;
+            font-size: 12px;
+            display: none;
+        }
+        .test-result.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .test-result.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .test-result.loading {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .settings-notice {
+            background-color: #fff3cd;
+            padding: 8px;
+            border-radius: 4px;
+            margin-top: 10px;
+            font-size: 12px;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <h1>📱 Tasmota IP Address Grid list Generator</h1>
+    
+    <div class="info">
+        <strong>click ip header</strong> for larger Tasmota http on/off url links and maybe config
+        <br><strong>💾 Settings are automatically saved</strong> and restored when you return
+    </div>
+
+    <div class="controls">
+        <div class="control-group">
+            <label for="baseIp">Base IP Address:</label>
+            <input type="text" id="baseIp" value="10.10.100." placeholder="e.g., 192.168.1.">
+        </div>
+        <div class="control-group">
+            <label for="ipPreset">Common IP Presets:</label>
+            <select id="ipPreset" onchange="applyIpPreset()">
+                <option value="">-- Select a preset --</option>
+                <option value="192.168.1.">192.168.1.x (Most Common)</option>
+                <option value="192.168.0.">192.168.0.x (Common)</option>
+                <option value="192.168.2.">192.168.2.x</option>
+                <option value="10.0.0.">10.0.0.x</option>
+                <option value="10.0.1.">10.0.1.x</option>
+                <option value="10.10.100.">10.10.100.x</option>
+                <option value="172.16.0.">172.16.0.x</option>
+                <option value="192.168.10.">192.168.10.x</option>
+                <option value="192.168.100.">192.168.100.x</option>
+                <option value="192.168.88.">192.168.88.x (MikroTik)</option>
+                <option value="192.168.178.">192.168.178.x (Fritz!Box)</option>
+                <option value="192.168.254.">192.168.254.x (BT Home Hub)</option>
+            </select>
+        </div>
+        <div class="control-group">
+            <label for="startRange">Start (last octet):</label>
+            <input type="number" id="startRange" value="100" min="1" max="254">
+        </div>
+        <div class="control-group">
+            <label for="endRange">End (last octet):</label>
+            <input type="number" id="endRange" value="130" min="1" max="254">
+        </div>
+        <div class="control-group">
+            <label for="columns">Grid Columns:</label>
+            <input type="number" id="columns" value="5" min="1" max="10">
+        </div>
+        <div class="control-group">
+            <label for="zoom">Iframe Zoom Level:</label>
+            <input type="number" id="zoom" value="100" min="10" max="200" step="10">%
+        </div>
+        <div class="control-group">
+            <label for="iframeHeight">Iframe Height (px):</label>
+            <input type="number" id="iframeHeight" value="400" min="100" max="1000" step="50">
+        </div>
+        <div class="control-group">
+            <label></label>
+            <div>
+                <button onclick="generateGrid()">Generate Grid</button>
+                <button class="reset-btn" onclick="resetSettings()">Reset to Defaults</button>
+            </div>
+        </div>
+        <div class="settings-notice">
+            💾 All settings are automatically saved to your browser's local storage
+        </div>
+    </div>
+
+    <div id="gridInfo"></div>
+    <div id="grid"></div>
+
+    <!-- Modal -->
+    <div id="urlModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>IP Address: <span id="modalIp"></span></h2>
+            
+            <div class="device-name-section">
+                <label for="deviceNameInput">Device Name:</label>
+                <div class="device-name-group">
+                    <input type="text" id="deviceNameInput" class="device-name-input" placeholder="e.g., Living Room Light, Kitchen Switch...">
+                    <button class="save-name-btn" onclick="saveCurrentDeviceName()">💾 Save</button>
+                </div>
+            </div>
+
+            <div class="preview-section">
+                <h3>📺 Device Preview</h3>
+                <div class="preview-controls">
+                    <label for="previewZoom">Zoom:</label>
+                    <input type="number" id="previewZoom" value="100" min="10" max="200" step="10">
+                    <span style="font-size: 12px;">%</span>
+                    <button class="open-window-btn" onclick="openInNewWindow()">🔗 Open in New Window</button>
+                </div>
+                <iframe id="previewIframe" class="preview-iframe"></iframe>
+            </div>
+            
+            <div class="url-section">
+                <h3>🟢 ON Command</h3>
+                <div class="url-display" id="onUrl"></div>
+                <div class="button-group">
+                    <button class="copy-btn" onclick="copyUrl('on')">📋 Copy ON</button>
+                    <button class="test-btn" onclick="testUrl('on')">🧪 Test ON</button>
+                </div>
+                <div class="test-result" id="onTestResult"></div>
+            </div>
+
+            <div class="url-section">
+                <h3>🔴 OFF Command</h3>
+                <div class="url-display" id="offUrl"></div>
+                <div class="button-group">
+                    <button class="copy-btn" onclick="copyUrl('off')">📋 Copy OFF</button>
+                    <button class="test-btn" onclick="testUrl('off')">🧪 Test OFF</button>
+                </div>
+                <div class="test-result" id="offTestResult"></div>
+            </div>
+        </div>
+    </div>
+
+    <div style="margin-top: 30px; padding: 20px; background: white; border-radius: 8px;">
+        <a href="https://codepen.io/ldijkman/full/dPXPGwo" target="_blank" style="color: #2196F3; text-decoration: none; font-size: 18px;">
+            ⏰ to unlimited timer schedule
+        </a>
+    </div>
+
+    <script>
+        let currentIp = '';
+        const STORAGE_KEY = 'tasmotaGridSettings';
+        const NAMES_KEY = 'tasmotaDeviceNames';
+
+        // Default settings
+        const defaultSettings = {
+            baseIp: '10.10.100.',
+            startRange: 100,
+            endRange: 130,
+            columns: 5,
+            zoom: 100,
+            iframeHeight: 400
+        };
+
+        // Save device name
+        function saveDeviceName(ip, name) {
+            try {
+                const names = loadDeviceNames();
+                if (name.trim() === '') {
+                    delete names[ip];
+                } else {
+                    names[ip] = name.trim();
+                }
+                localStorage.setItem(NAMES_KEY, JSON.stringify(names));
+                console.log('Device name saved:', ip, name);
+                generateGrid(); // Refresh to show the name
+            } catch (e) {
+                console.error('Error saving device name:', e);
+            }
+        }
+
+        // Load device names
+        function loadDeviceNames() {
+            try {
+                const saved = localStorage.getItem(NAMES_KEY);
+                return saved ? JSON.parse(saved) : {};
+            } catch (e) {
+                console.error('Error loading device names:', e);
+                return {};
+            }
+        }
+
+        // Load settings from localStorage
+        function loadSettings() {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    const settings = JSON.parse(saved);
+                    document.getElementById('baseIp').value = settings.baseIp || defaultSettings.baseIp;
+                    document.getElementById('startRange').value = settings.startRange || defaultSettings.startRange;
+                    document.getElementById('endRange').value = settings.endRange || defaultSettings.endRange;
+                    document.getElementById('columns').value = settings.columns || defaultSettings.columns;
+                    document.getElementById('zoom').value = settings.zoom || defaultSettings.zoom;
+                    document.getElementById('iframeHeight').value = settings.iframeHeight || defaultSettings.iframeHeight;
+                    console.log('Settings loaded from localStorage');
+                }
+            } catch (e) {
+                console.error('Error loading settings:', e);
+            }
+        }
+
+        // Save settings to localStorage
+        function saveSettings() {
+            try {
+                const settings = {
+                    baseIp: document.getElementById('baseIp').value,
+                    startRange: parseInt(document.getElementById('startRange').value),
+                    endRange: parseInt(document.getElementById('endRange').value),
+                    columns: parseInt(document.getElementById('columns').value),
+                    zoom: parseInt(document.getElementById('zoom').value),
+                    iframeHeight: parseInt(document.getElementById('iframeHeight').value)
+                };
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+                console.log('Settings saved to localStorage');
+            } catch (e) {
+                console.error('Error saving settings:', e);
+            }
+        }
+
+        // Reset settings to defaults
+        function resetSettings() {
+            if (confirm('Reset all settings to default values?')) {
+                document.getElementById('baseIp').value = defaultSettings.baseIp;
+                document.getElementById('startRange').value = defaultSettings.startRange;
+                document.getElementById('endRange').value = defaultSettings.endRange;
+                document.getElementById('columns').value = defaultSettings.columns;
+                document.getElementById('zoom').value = defaultSettings.zoom;
+                document.getElementById('iframeHeight').value = defaultSettings.iframeHeight;
+                saveSettings();
+                generateGrid();
+            }
+        }
+
+        // Apply IP preset from dropdown
+        function applyIpPreset() {
+            const preset = document.getElementById('ipPreset').value;
+            if (preset) {
+                document.getElementById('baseIp').value = preset;
+                document.getElementById('ipPreset').value = ''; // Reset dropdown
+                saveSettings();
+            }
+        }
+
+        // Add event listeners to save settings when they change
+        function setupAutoSave() {
+            const inputs = ['baseIp', 'startRange', 'endRange', 'columns', 'zoom', 'iframeHeight'];
+            inputs.forEach(id => {
+                const element = document.getElementById(id);
+                element.addEventListener('change', saveSettings);
+                element.addEventListener('input', saveSettings);
+            });
+        }
+
+        function generateGrid() {
+            const baseIp = document.getElementById('baseIp').value;
+            const startRange = parseInt(document.getElementById('startRange').value);
+            const endRange = parseInt(document.getElementById('endRange').value);
+            const columns = parseInt(document.getElementById('columns').value);
+            const zoom = parseInt(document.getElementById('zoom').value);
+            const iframeHeight = parseInt(document.getElementById('iframeHeight').value);
+
+            // Save settings before generating
+            saveSettings();
+
+            const grid = document.getElementById('grid');
+            grid.innerHTML = '';
+            grid.style.gridTemplateColumns = `repeat(${columns}, 1fr)`;
+
+            const count = endRange - startRange + 1;
+            document.getElementById('gridInfo').innerHTML = 
+                `<p><strong>Grid will display ${count} iframes (${baseIp}${startRange} to ${baseIp}${endRange})</strong></p>`;
+
+            // Load saved names
+            const savedNames = loadDeviceNames();
+
+            for (let i = startRange; i <= endRange; i++) {
+                const ip = baseIp + i;
+                const gridItem = document.createElement('div');
+                gridItem.className = 'grid-item';
+                
+                // Add name display if exists
+                const savedName = savedNames[ip];
+                if (savedName) {
+                    const nameDisplay = document.createElement('div');
+                    nameDisplay.className = 'device-name';
+                    nameDisplay.textContent = savedName;
+                    gridItem.appendChild(nameDisplay);
+                }
+                
+                const header = document.createElement('div');
+                header.className = 'ip-header';
+                header.textContent = ip;
+                header.onclick = () => openModal(ip);
+                
+                gridItem.appendChild(header);
+                
+                const iframe = document.createElement('iframe');
+                iframe.src = `http://${ip}`;
+                iframe.style.height = iframeHeight + 'px';
+                iframe.style.zoom = zoom + '%';
+                
+                gridItem.appendChild(iframe);
+                grid.appendChild(gridItem);
+            }
+        }
+
+        function openModal(ip) {
+            currentIp = ip;
+            const modal = document.getElementById('urlModal');
+            document.getElementById('modalIp').textContent = ip;
+            
+            // Load and set device name
+            const savedNames = loadDeviceNames();
+            const deviceNameInput = document.getElementById('deviceNameInput');
+            deviceNameInput.value = savedNames[ip] || '';
+            
+            // Set preview iframe
+            const previewIframe = document.getElementById('previewIframe');
+            previewIframe.src = `http://${ip}`;
+            
+            // Set up preview zoom control
+            const previewZoom = document.getElementById('previewZoom');
+            previewZoom.value = 100;
+            previewZoom.oninput = () => {
+                previewIframe.style.zoom = previewZoom.value + '%';
+            };
+            
+            const onUrl = `http://${ip}/cm?cmnd=Power%20ON`;
+            const offUrl = `http://${ip}/cm?cmnd=Power%20OFF`;
+            
+            document.getElementById('onUrl').textContent = onUrl;
+            document.getElementById('offUrl').textContent = offUrl;
+            
+            // Hide test results
+            document.getElementById('onTestResult').style.display = 'none';
+            document.getElementById('offTestResult').style.display = 'none';
+            
+            modal.style.display = 'block';
+        }
+
+        function openInNewWindow() {
+            window.open(`http://${currentIp}`, '_blank', 'width=1000,height=800');
+        }
+
+        function saveCurrentDeviceName() {
+            const deviceNameInput = document.getElementById('deviceNameInput');
+            const name = deviceNameInput.value.trim();
+            saveDeviceName(currentIp, name);
+            if (name) {
+                alert(`✅ Device name "${name}" saved!`);
+            } else {
+                alert('✅ Device name cleared!');
+            }
+        }
+
+        function copyUrl(type) {
+            const url = type === 'on' ? 
+                document.getElementById('onUrl').textContent : 
+                document.getElementById('offUrl').textContent;
+            
+            navigator.clipboard.writeText(url).then(() => {
+                alert(`${type.toUpperCase()} URL copied to clipboard!`);
+            });
+        }
+
+        async function testUrl(type) {
+            const url = type === 'on' ? 
+                document.getElementById('onUrl').textContent : 
+                document.getElementById('offUrl').textContent;
+            
+            const resultDiv = document.getElementById(type + 'TestResult');
+            resultDiv.className = 'test-result loading';
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = `Testing ${type.toUpperCase()} command...`;
+            
+            try {
+                // Make the request in the background using fetch with no-cors mode
+                const response = await fetch(url, {
+                    mode: 'no-cors',
+                    method: 'GET'
+                });
+                
+                // no-cors mode doesn't give us response details, but if no error thrown, it went through
+                resultDiv.className = 'test-result success';
+                resultDiv.textContent = `✅ ${type.toUpperCase()} command sent successfully!`;
+                
+                // Also update the preview iframe to show the new state
+                const previewIframe = document.getElementById('previewIframe');
+                if (previewIframe) {
+                    // Reload the iframe to show updated state
+                    previewIframe.src = previewIframe.src;
+                }
+                
+            } catch (error) {
+                resultDiv.className = 'test-result error';
+                resultDiv.textContent = `❌ Error sending ${type.toUpperCase()} command: ${error.message}`;
+            }
+            
+            // Auto-hide after 3 seconds
+            setTimeout(() => {
+                resultDiv.style.display = 'none';
+            }, 3000);
+        }
+
+        // Modal close functionality
+        const modal = document.getElementById('urlModal');
+        const span = document.getElementsByClassName('close')[0];
+
+        span.onclick = function() {
+            modal.style.display = 'none';
+        }
+
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        // Initialize on page load
+        window.onload = function() {
+            loadSettings();
+            setupAutoSave();
+            generateGrid();
+        };
+    </script>
+</body>
+</html>
