@@ -148,44 +148,6 @@
             margin: 0 8px;
         }
 
-        /* View Mode Toggle */
-        .view-mode-toggle {
-            display: flex;
-            gap: 4px;
-            background: rgba(255, 255, 255, 0.05);
-            padding: 4px;
-            border-radius: 6px;
-        }
-
-        .view-btn {
-            padding: 6px 12px;
-            border: none;
-            border-radius: 4px;
-            background: transparent;
-            color: var(--text-light);
-            cursor: pointer;
-            font-size: 12px;
-            transition: all 0.2s;
-            font-family: inherit;
-            white-space: nowrap;
-        }
-
-        .view-btn:hover {
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .view-btn.active {
-            background: var(--primary-color);
-            color: white;
-        }
-
-        @media (max-width: 768px) {
-            .view-btn {
-                padding: 6px 8px;
-                font-size: 10px;
-            }
-        }
-
         /* Sidebar */
         #sidebar {
             position: fixed;
@@ -288,31 +250,10 @@
             right: 0;
             bottom: 30px;
             transition: left 0.3s ease;
-            display: flex;
         }
 
         #main.expanded {
             left: 0;
-        }
-
-        #main.split-view #editor {
-            width: 50%;
-            position: relative;
-        }
-
-        #main.split-view #preview {
-            width: 50%;
-            position: relative;
-            display: block !important;
-        }
-
-        #main.preview-only #editor {
-            display: none;
-        }
-
-        #main.preview-only #preview {
-            width: 100%;
-            display: block !important;
         }
 
         #editor,
@@ -324,24 +265,11 @@
             bottom: 0;
         }
 
-        #main.split-view #editor,
-        #main.split-view #preview,
-        #main.preview-only #preview {
-            position: relative;
-            height: 100%;
-        }
-
         #preview {
             background: white;
-            padding: 0;
-            overflow: hidden;
+            padding: 20px;
+            overflow: auto;
             display: none;
-        }
-
-        #preview iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
         }
 
         /* Context Menu */
@@ -785,14 +713,6 @@
         <button id="previewBtn" title="Preview in new window">👁️</button>
         <button id="fullscreenBtn" title="Toggle fullscreen">⛶</button>
         
-        <div class="divider"></div>
-        
-        <div class="view-mode-toggle">
-            <button id="editorOnlyBtn" class="view-btn active" title="Editor only">Code</button>
-            <button id="splitViewBtn" class="view-btn" title="Split view">Split</button>
-            <button id="previewOnlyBtn" class="view-btn" title="Preview only">Preview</button>
-        </div>
-        
         <div style="flex: 1;"></div>
         
         <div id="status" style="font-size: 12px; display: none;" class="desktop-only">Loading...</div>
@@ -812,7 +732,10 @@
     <div id="main">
         <div id="editor"></div>
         <div id="preview">
-            <iframe id="previewFrame"></iframe>
+            <div style="text-align: center; color: #94a3b8; margin-top: 50px;">
+                <h2>No file selected</h2>
+                <p>Select a file from the tree to start editing</p>
+            </div>
         </div>
     </div>
 
@@ -952,8 +875,6 @@
         let currentFile = '';
         let fsInfo = {};
         let isDirty = false;
-        let viewMode = 'editor'; // 'editor', 'split', 'preview'
-        let previewUpdateTimeout = null;
 
         function initEditor() {
             editor = ace.edit('editor');
@@ -989,12 +910,6 @@
                 if (!isDirty) {
                     isDirty = true;
                     updateSaveButtons();
-                }
-                
-                // Update preview with debounce
-                if (viewMode !== 'editor') {
-                    clearTimeout(previewUpdateTimeout);
-                    previewUpdateTimeout = setTimeout(updatePreview, 500);
                 }
             });
 
@@ -1068,53 +983,6 @@
             $('saveBtn').disabled = !isDirty;
         }
 
-        function updatePreview() {
-            if (viewMode === 'editor') return;
-            
-            const content = editor.getValue();
-            const iframe = $('previewFrame');
-            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-            
-            iframeDoc.open();
-            iframeDoc.write(content);
-            iframeDoc.close();
-        }
-
-        function setViewMode(mode) {
-            viewMode = mode;
-            const main = $('main');
-            
-            // Update button states
-            $('editorOnlyBtn').classList.remove('active');
-            $('splitViewBtn').classList.remove('active');
-            $('previewOnlyBtn').classList.remove('active');
-            
-            // Remove all view classes
-            main.classList.remove('split-view', 'preview-only');
-            
-            switch(mode) {
-                case 'editor':
-                    $('editorOnlyBtn').classList.add('active');
-                    break;
-                case 'split':
-                    $('splitViewBtn').classList.add('active');
-                    main.classList.add('split-view');
-                    updatePreview();
-                    break;
-                case 'preview':
-                    $('previewOnlyBtn').classList.add('active');
-                    main.classList.add('preview-only');
-                    updatePreview();
-                    break;
-            }
-            
-            // Resize editor
-            setTimeout(() => editor.resize(), 100);
-            
-            // Save preference
-            localStorage.setItem('viewMode', mode);
-        }
-
         // ============================================
         // FILE OPERATIONS
         // ============================================
@@ -1142,6 +1010,7 @@
                     })
                     .then(content => {
                         $('editor').style.display = 'block';
+                        $('preview').style.display = 'none';
                         
                         editor.setValue(content, -1);
                         editor.session.setMode('ace/mode/' + getAceMode(path));
@@ -1152,26 +1021,15 @@
                         $('fileSize').textContent = readableSize(content.length);
                         hideLoading();
                         showToast('File loaded successfully');
-                        
-                        // Update preview if in split/preview mode
-                        if (viewMode !== 'editor') {
-                            updatePreview();
-                        }
                     })
                     .catch(error => {
                         hideLoading();
                         showToast('Failed to load file: ' + error.message, 'error');
                     });
             } else if (isImageFile(path)) {
-                $('editor').style.display = 'block';
-                const iframe = $('previewFrame');
-                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-                iframeDoc.open();
-                iframeDoc.write(`<html><body style="margin:0;display:flex;align-items:center;justify-content:center;height:100vh;background:#f0f0f0;"><img src="${path}" style="max-width:100%;max-height:100%;object-fit:contain;"></body></html>`);
-                iframeDoc.close();
-                
-                // Switch to preview mode for images
-                setViewMode('preview');
+                $('editor').style.display = 'none';
+                $('preview').style.display = 'block';
+                $('preview').innerHTML = `<img src="${path}" style="max-width: 100%; max-height: 100%; object-fit: contain; margin: auto; display: block;" />`;
                 showToast('Image loaded');
             } else {
                 showToast('Unsupported file type', 'warning');
@@ -1667,14 +1525,6 @@
                 localStorage.setItem('showLineNumbers', lineNumbersVisible);
                 $('toggleLineNumbers').style.opacity = lineNumbersVisible ? '1' : '0.5';
             });
-            
-            // View mode controls
-            const savedViewMode = localStorage.getItem('viewMode') || 'editor';
-            setViewMode(savedViewMode);
-            
-            $('editorOnlyBtn').addEventListener('click', () => setViewMode('editor'));
-            $('splitViewBtn').addEventListener('click', () => setViewMode('split'));
-            $('previewOnlyBtn').addEventListener('click', () => setViewMode('preview'));
             
             // Search button
             $('searchBtn').addEventListener('click', () => {
