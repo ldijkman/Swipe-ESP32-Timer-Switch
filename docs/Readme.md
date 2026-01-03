@@ -35,3 +35,7 @@ https://ldijkman.github.io/Swipe-ESP32-Timer-Switch/Scan_wifi_ip.html
 https://ldijkman.github.io/Swipe-ESP32-Timer-Switch/Scan-wifi.html
 
 
+---
+
+https://ldijkman.github.io/Swipe-ESP32-Timer-Switch/ace editor for esp32 webserver mobile friendly.html
+
