@@ -6,7 +6,7 @@
 
 // WiFi credentials
 const char* ssid = "wifi";
-const char* password = "wifipassword";
+const char* password = "wifipass";
 
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
@@ -1376,10 +1376,6 @@ void handleRoot(AsyncWebServerRequest *request) {
 </head>
 <body>
   <h1>Tasmota Device Control<span class="parallel-badge">⚡ ASYNC</span></h1>
-  
-  <div style="text-align: center; padding: 8px; margin-bottom: 15px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 5px; font-size: 13px; color: #856404;">
-    🔒 <strong>Login:</strong> admin / admin
-  </div>
   
   <div class="connection disconnected" id="wsStatus">Connecting to WebSocket...</div>
   
