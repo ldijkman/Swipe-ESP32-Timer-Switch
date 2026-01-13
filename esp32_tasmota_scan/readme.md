@@ -10,6 +10,24 @@ some quick claude ai generated code
 
 works a bit
 
+---
+
+by serving no cors webpage from an esp32
+
+no problem with CORS 
+
+getting status from each tasmota device
+
+fetching status on webpage from htpp tasmota gives CORS problems
+
+no status given to webpage
+
+this way i can get status 
+
+an middle man esp32 server
+
+---
+
 
 
 
