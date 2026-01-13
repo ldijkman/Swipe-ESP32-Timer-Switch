@@ -1,4 +1,12 @@
-esp32 scans network for devices and show on webpage
+an esp32 board 
+
+scans network for tasmota http devices and show on webpage
+
+some quick claude ai generated code
+
+works a bit
+
+
 
 
 
