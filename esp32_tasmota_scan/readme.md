@@ -28,7 +28,11 @@ an middle man esp32 server
 
 ---
 
+TIP!
 
+Tasmota Remota think a nice app well priced for android
+
+---
 
 
 
