@@ -2,9 +2,9 @@ an esp32 board
 
 scans network for tasmota http devices and show on webpage
 
-toggle each device by click on status
+toggle each tasmota device by click on status
 
-switch all on / off
+switch all tasmota on / off
 
 some quick claude ai generated code
 
