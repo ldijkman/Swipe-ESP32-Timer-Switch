@@ -1,4 +1,4 @@
-an esp32 scans for tasmota devices http url check for cm cmd power
+an esp32 scans for tasmota devices http url check http://   ip   /cm?cmnd=power)
 
 scans network for tasmota http devices and show on webpage
 
