@@ -12,8 +12,8 @@
 
 // ── Configuration ────────────────────────────────────────────────
 // WiFi credentials
-const char* ssid = "Bangert_30_Andijk";
-const char* password = "ookikwilerin";
+const char* ssid = "wifi";
+const char* password = "pass";
 
 // Network configuration
 IPAddress local_IP;
