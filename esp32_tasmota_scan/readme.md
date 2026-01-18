@@ -42,3 +42,6 @@ Tasmota Remota think a nice app well priced for android
 <img width="1024" height="768" alt="tasmota esp32 parallel scan" src="https://github.com/user-attachments/assets/da817260-6219-4360-9d44-d086fb686f51" />
 
 <img width="1024" height="768" alt="tasmota_parallel_scan_esp32" src="https://github.com/user-attachments/assets/1a919463-52df-4da3-a86a-b721174fb068" />
+
+
+tasmotaremota
