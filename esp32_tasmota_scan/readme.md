@@ -12,6 +12,18 @@ works a bit
 
 ---
 
+easy forward 1 esp32 on internet
+
+to controll all tasmotas from a webpage
+
+low power use esp32 webserver
+
+maybe use duckdns no-ip?
+
+esp32 could update ip?
+
+---
+
 by serving no cors webpage from an esp32
 
 no problem with CORS 
