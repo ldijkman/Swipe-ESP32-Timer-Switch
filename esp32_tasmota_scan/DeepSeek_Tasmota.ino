@@ -54,7 +54,17 @@ void refreshAllStatesTask(void* parameter);
 
 // Serve HTML page
 void handleRoot(AsyncWebServerRequest *request) {
+  Serial.println("Serving root page...");
+  
   AsyncResponseStream *response = request->beginResponseStream("text/html");
+  
+  if (!response) {
+    Serial.println("ERROR: Failed to create response stream");
+    request->send(500, "text/plain", "Failed to create response");
+    return;
+  }
+  
+  Serial.printf("Free heap before HTML: %d bytes\n", ESP.getFreeHeap());
   
   response->print("<!DOCTYPE HTML><html><head>");
   response->print("<meta charset='UTF-8'>");
@@ -146,9 +156,10 @@ void handleRoot(AsyncWebServerRequest *request) {
   response->print("<script>");
   response->print("var ws,wsConnected=false;");
   response->print("function vibrate(d){d=d||100;if(navigator.vibrate)navigator.vibrate(d)}");
-  response->print("function connectWebSocket(){console.log('Connecting...');");
+  response->print("function connectWebSocket(){console.log('Connecting to WebSocket...');");
   response->print("ws=new WebSocket('ws://'+location.hostname+'/ws');");
-  response->print("ws.onopen=function(){console.log('Connected');wsConnected=true;");
+  response->print("console.log('WebSocket URL: ws://'+location.hostname+'/ws');");
+  response->print("ws.onopen=function(){console.log('WebSocket Connected Successfully');wsConnected=true;");
   response->print("document.getElementById('scanBtn').disabled=false;");
   response->print("ws.send(JSON.stringify({action:'get_config'}))};");
   
@@ -182,8 +193,10 @@ void handleRoot(AsyncWebServerRequest *request) {
   response->print("document.getElementById('statusMsg').textContent='Status: Starting scan...'}");
   response->print("else if(d.type==='info')console.log('Info:',d.msg)};");
   
-  response->print("ws.onerror=function(e){console.error('WS error:',e);wsConnected=false};");
-  response->print("ws.onclose=function(){console.log('WS closed');wsConnected=false;setTimeout(connectWebSocket,2000)}}");
+  response->print("ws.onerror=function(e){console.error('WebSocket Error:',e);wsConnected=false;");
+  response->print("console.error('WebSocket failed to connect. Check that ESP32 is running and accessible.')};");
+  response->print("ws.onclose=function(e){console.log('WebSocket closed. Code:',e.code,'Reason:',e.reason);");
+  response->print("wsConnected=false;setTimeout(connectWebSocket,2000)}}");
   
   response->print("function attachDeviceHandlers(){var ips=document.querySelectorAll('.device-ip');");
   response->print("for(var i=0;i<ips.length;i++)ips[i].addEventListener('click',function(){");
@@ -246,7 +259,10 @@ void handleRoot(AsyncWebServerRequest *request) {
   response->print("if(e.target==m)closeConfig()}");
   response->print("</script></body></html>");
   
+  Serial.printf("Free heap before send: %d bytes\n", ESP.getFreeHeap());
   request->send(response);
+  Serial.println("Root page sent successfully");
+  Serial.printf("Free heap after send: %d bytes\n", ESP.getFreeHeap());
 }
 
 // Configuration Functions
@@ -885,8 +901,14 @@ void setup() {
   Serial.printf("  State cache duration: %dms\n", STATE_CACHE_DURATION);
   
   server.on("/", HTTP_GET, handleRoot);
+  server.on("/favicon.ico", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(204); // No content
+  });
   ws.onEvent(onWsEvent);
   server.addHandler(&ws);
+  
+  Serial.println("WebSocket handler registered at /ws");
+  
   server.begin();
   
   Serial.println("HTTP server started");
