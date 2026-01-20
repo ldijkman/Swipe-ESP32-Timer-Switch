@@ -23,7 +23,6 @@ int endOctet     = 140;
 
 #define MAX_PARALLEL_SCANS 12
 #define SCAN_TIMEOUT_MS 1000
-#define STATE_CACHE_DURATION 5000  // Cache states for 5 seconds
 
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
@@ -33,8 +32,6 @@ struct DeviceInfo {
   String ip;
   String deviceName;
   String friendlyName;
-  String lastKnownState;      // ADDED: Cache the state
-  unsigned long lastStateUpdate;  // ADDED: Timestamp of last update
 };
 
 std::vector<DeviceInfo> tasmotaDevices;
@@ -50,21 +47,10 @@ void broadcastDevices();
 void broadcastToWebClients(const String& message);
 void loadConfig();
 void saveConfig();
-void refreshAllStatesTask(void* parameter);
 
 // Serve HTML page
 void handleRoot(AsyncWebServerRequest *request) {
-  Serial.println("Serving root page...");
-  
   AsyncResponseStream *response = request->beginResponseStream("text/html");
-  
-  if (!response) {
-    Serial.println("ERROR: Failed to create response stream");
-    request->send(500, "text/plain", "Failed to create response");
-    return;
-  }
-  
-  Serial.printf("Free heap before HTML: %d bytes\n", ESP.getFreeHeap());
   
   response->print("<!DOCTYPE HTML><html><head>");
   response->print("<meta charset='UTF-8'>");
@@ -77,7 +63,7 @@ void handleRoot(AsyncWebServerRequest *request) {
   response->print(".control-panel{max-width:1200px;margin:0 auto 20px;display:flex;gap:10px;flex-wrap:wrap;justify-content:center}");
   response->print(".devices-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;max-width:1200px;margin:0 auto}");
   response->print(".device{padding:8px;background:#666;border-radius:6px}");
-  response->print(".device-header{width:100%;padding:6px;border-radius:4px 4px 0 0;margin:-8px -8px 6px -8px;font-weight:bold;font-size:14px;box-sizing:border-box}");
+  response->print(".device-header{width:calc(100% + 16px);padding:6px;border-radius:4px 4px 0 0;margin:-8px -8px 6px -8px;font-weight:bold;font-size:14px}");
   response->print(".on .device-header{background:#4CAF50}");
   response->print(".off .device-header{background:#f44336}");
   response->print(".device-name{font-size:13px;margin:2px 0;color:#fff}");
@@ -156,10 +142,9 @@ void handleRoot(AsyncWebServerRequest *request) {
   response->print("<script>");
   response->print("var ws,wsConnected=false;");
   response->print("function vibrate(d){d=d||100;if(navigator.vibrate)navigator.vibrate(d)}");
-  response->print("function connectWebSocket(){console.log('Connecting to WebSocket...');");
+  response->print("function connectWebSocket(){console.log('Connecting...');");
   response->print("ws=new WebSocket('ws://'+location.hostname+'/ws');");
-  response->print("console.log('WebSocket URL: ws://'+location.hostname+'/ws');");
-  response->print("ws.onopen=function(){console.log('WebSocket Connected Successfully');wsConnected=true;");
+  response->print("ws.onopen=function(){console.log('Connected');wsConnected=true;");
   response->print("document.getElementById('scanBtn').disabled=false;");
   response->print("ws.send(JSON.stringify({action:'get_config'}))};");
   
@@ -193,10 +178,8 @@ void handleRoot(AsyncWebServerRequest *request) {
   response->print("document.getElementById('statusMsg').textContent='Status: Starting scan...'}");
   response->print("else if(d.type==='info')console.log('Info:',d.msg)};");
   
-  response->print("ws.onerror=function(e){console.error('WebSocket Error:',e);wsConnected=false;");
-  response->print("console.error('WebSocket failed to connect. Check that ESP32 is running and accessible.')};");
-  response->print("ws.onclose=function(e){console.log('WebSocket closed. Code:',e.code,'Reason:',e.reason);");
-  response->print("wsConnected=false;setTimeout(connectWebSocket,2000)}}");
+  response->print("ws.onerror=function(e){console.error('WS error:',e);wsConnected=false};");
+  response->print("ws.onclose=function(){console.log('WS closed');wsConnected=false;setTimeout(connectWebSocket,2000)}}");
   
   response->print("function attachDeviceHandlers(){var ips=document.querySelectorAll('.device-ip');");
   response->print("for(var i=0;i<ips.length;i++)ips[i].addEventListener('click',function(){");
@@ -259,10 +242,7 @@ void handleRoot(AsyncWebServerRequest *request) {
   response->print("if(e.target==m)closeConfig()}");
   response->print("</script></body></html>");
   
-  Serial.printf("Free heap before send: %d bytes\n", ESP.getFreeHeap());
   request->send(response);
-  Serial.println("Root page sent successfully");
-  Serial.printf("Free heap after send: %d bytes\n", ESP.getFreeHeap());
 }
 
 // Configuration Functions
@@ -389,28 +369,13 @@ void scanRangeTask(void* parameter) {
       String friendlyName = getFriendlyName(ip);
       if (friendlyName.length() == 0) friendlyName = deviceName;
       
-      // MODIFIED: Get initial state during scan
-      String initialState = "UNKNOWN";
-      HTTPClient http;
-      http.setTimeout(1000);
-      http.begin("http://" + ip + "/cm?cmnd=Power");
-      if (http.GET() == 200) {
-        String response = http.getString();
-        if (response.indexOf("\"ON\"") >= 0) initialState = "ON";
-        else if (response.indexOf("\"OFF\"") >= 0) initialState = "OFF";
-      }
-      http.end();
-      
-      Serial.printf("  Device: %s, Friendly: %s, State: %s\n", 
-                    deviceName.c_str(), friendlyName.c_str(), initialState.c_str());
+      Serial.printf("  Device: %s, Friendly: %s\n", deviceName.c_str(), friendlyName.c_str());
       
       if (xSemaphoreTake(ipListMutex, portMAX_DELAY)) {
         DeviceInfo device;
         device.ip = ip;
         device.deviceName = deviceName;
         device.friendlyName = friendlyName;
-        device.lastKnownState = initialState;  // ADDED
-        device.lastStateUpdate = millis();      // ADDED
         tasmotaDevices.push_back(device);
         xSemaphoreGive(ipListMutex);
       }
@@ -529,60 +494,27 @@ void broadcastToWebClients(const String& message) {
   }
 }
 
-// MODIFIED: Smart state fetching with cache
-String getPowerState(const String& ip, bool forceRefresh = false) {
+String getPowerState(const String& ip) {
   esp_task_wdt_reset();
-  
-  // Check cache first (unless force refresh)
-  if (!forceRefresh && xSemaphoreTake(ipListMutex, portMAX_DELAY)) {
-    for (auto& device : tasmotaDevices) {
-      if (device.ip == ip) {
-        unsigned long age = millis() - device.lastStateUpdate;
-        if (age < STATE_CACHE_DURATION && device.lastKnownState != "UNKNOWN") {
-          String cachedState = device.lastKnownState;
-          xSemaphoreGive(ipListMutex);
-          Serial.printf("  Using cached state for %s: %s (age: %lums)\n", 
-                       ip.c_str(), cachedState.c_str(), age);
-          return cachedState;
-        }
-        break;
-      }
-    }
-    xSemaphoreGive(ipListMutex);
-  }
-  
-  // Fetch fresh state
   HTTPClient http;
   http.setTimeout(2000);
   http.begin("http://" + ip + "/cm?cmnd=Power");
   int code = http.GET();
   
-  String state = "UNKNOWN";
   if (code == 200) {
     String response = http.getString();
     http.end();
     
     Serial.printf("  Power response from %s: %s\n", ip.c_str(), response.c_str());
     
-    if (response.indexOf("\"ON\"") >= 0) state = "ON";
-    else if (response.indexOf("\"OFF\"") >= 0) state = "OFF";
+    if (response.indexOf("\"ON\"") >= 0) return "ON";
+    if (response.indexOf("\"OFF\"") >= 0) return "OFF";
     
-    // Update cache
-    if (xSemaphoreTake(ipListMutex, portMAX_DELAY)) {
-      for (auto& device : tasmotaDevices) {
-        if (device.ip == ip) {
-          device.lastKnownState = state;
-          device.lastStateUpdate = millis();
-          break;
-        }
-      }
-      xSemaphoreGive(ipListMutex);
-    }
+    return response.substring(0, 50);
   } else {
     http.end();
   }
-  
-  return state;
+  return "UNKNOWN";
 }
 
 void togglePower(const String& ip) {
@@ -597,25 +529,6 @@ void togglePower(const String& ip) {
   http.end();
   
   Serial.printf("  Toggle response (%d): %s\n", code, response.c_str());
-  
-  // ADDED: Update cache immediately based on toggle response
-  if (code == 200) {
-    String newState = "UNKNOWN";
-    if (response.indexOf("\"ON\"") >= 0) newState = "ON";
-    else if (response.indexOf("\"OFF\"") >= 0) newState = "OFF";
-    
-    if (xSemaphoreTake(ipListMutex, portMAX_DELAY)) {
-      for (auto& device : tasmotaDevices) {
-        if (device.ip == ip) {
-          device.lastKnownState = newState;
-          device.lastStateUpdate = millis();
-          break;
-        }
-      }
-      xSemaphoreGive(ipListMutex);
-    }
-  }
-  
   delay(200);
 }
 
@@ -623,7 +536,7 @@ void setPowerAll(bool state) {
   Serial.printf("Setting all lights to: %s\n", state ? "ON" : "OFF");
   
   if (xSemaphoreTake(ipListMutex, portMAX_DELAY)) {
-    for (auto& device : tasmotaDevices) {
+    for (const auto& device : tasmotaDevices) {
       esp_task_wdt_reset();
       HTTPClient http;
       http.setTimeout(2000);
@@ -631,11 +544,6 @@ void setPowerAll(bool state) {
       http.begin("http://" + device.ip + "/cm?cmnd=" + cmd);
       http.GET();
       http.end();
-      
-      // ADDED: Update cache
-      device.lastKnownState = state ? "ON" : "OFF";
-      device.lastStateUpdate = millis();
-      
       delay(50);
     }
     xSemaphoreGive(ipListMutex);
@@ -644,88 +552,22 @@ void setPowerAll(bool state) {
   broadcastDevices();
 }
 
-// ADDED: Background task to refresh all device states
-void refreshAllStatesTask(void* parameter) {
-  Serial.println("[RefreshStates] Starting background status refresh...");
-  
-  esp_task_wdt_reset();
-  delay(500); // Small delay to let initial cached broadcast complete
-  
-  std::vector<String> deviceIPs;
-  
-  // Get list of device IPs
-  if (xSemaphoreTake(ipListMutex, portMAX_DELAY)) {
-    for (const auto& device : tasmotaDevices) {
-      deviceIPs.push_back(device.ip);
-    }
-    xSemaphoreGive(ipListMutex);
-  }
-  
-  // Refresh each device state
-  bool anyChanged = false;
-  for (const String& ip : deviceIPs) {
-    esp_task_wdt_reset();
-    
-    String oldState = "";
-    if (xSemaphoreTake(ipListMutex, portMAX_DELAY)) {
-      for (const auto& device : tasmotaDevices) {
-        if (device.ip == ip) {
-          oldState = device.lastKnownState;
-          break;
-        }
-      }
-      xSemaphoreGive(ipListMutex);
-    }
-    
-    // Force refresh from device
-    String newState = getPowerState(ip, true);
-    
-    // Check if state changed
-    if (newState != oldState && newState != "UNKNOWN") {
-      anyChanged = true;
-      Serial.printf("[RefreshStates] State changed for %s: %s -> %s\n", 
-                   ip.c_str(), oldState.c_str(), newState.c_str());
-      
-      // Broadcast individual update
-      JsonDocument updateDoc;
-      updateDoc["type"] = "device_update";
-      updateDoc["ip"] = ip;
-      updateDoc["state"] = newState;
-      String updateJson;
-      serializeJson(updateDoc, updateJson);
-      broadcastToWebClients(updateJson);
-    }
-    
-    delay(100); // Small delay between requests to avoid overwhelming network
-  }
-  
-  Serial.printf("[RefreshStates] Background refresh complete. Changed: %s\n", 
-               anyChanged ? "YES" : "NO");
-  
-  vTaskDelete(NULL);
-}
-
-// MODIFIED: Fast broadcast using cached states
 void broadcastDevices() {
-  Serial.println("Broadcasting devices to WebSocket clients (using cache)");
+  Serial.println("Broadcasting devices to WebSocket clients");
   
   esp_task_wdt_reset();
   JsonDocument doc;
   JsonArray list = doc["list"].to<JsonArray>();
   
   if (xSemaphoreTake(ipListMutex, portMAX_DELAY)) {
-    for (auto& device : tasmotaDevices) {
+    for (const auto& device : tasmotaDevices) {
       JsonObject dev = list.add<JsonObject>();
       dev["ip"] = device.ip;
       dev["devicename"] = device.deviceName;
       dev["friendlyname"] = device.friendlyName;
-      
-      // Use cached state (no HTTP request!)
-      String state = device.lastKnownState;
+      String state = getPowerState(device.ip);
       dev["state"] = state;
-      
-      Serial.printf("  Device: %s (%s) -> %s (cached)\n", 
-                   device.friendlyName.c_str(), device.ip.c_str(), state.c_str());
+      Serial.printf("  Device: %s (%s) -> %s\n", device.friendlyName.c_str(), device.ip.c_str(), state.c_str());
       esp_task_wdt_reset();
     }
     xSemaphoreGive(ipListMutex);
@@ -743,8 +585,6 @@ void broadcastDevices() {
 void onWsEvent(AsyncWebSocket* server, AsyncWebSocketClient* client,
                AwsEventType type, void* arg, uint8_t* data, size_t len) {
   
-  Serial.printf("[WS Event] Type: %d from client #%u\n", type, client ? client->id() : 0);
-  
   if (type == WS_EVT_CONNECT) {
     Serial.printf("WebSocket client #%u connected from %s\n", 
                   client->id(), client->remoteIP().toString().c_str());
@@ -754,14 +594,7 @@ void onWsEvent(AsyncWebSocket* server, AsyncWebSocketClient* client,
       xSemaphoreGive(clientListMutex);
     }
     client->text("{\"type\":\"info\",\"msg\":\"Connected\"}");
-    
-    // MODIFIED: Instant response using cache
     broadcastDevices();
-    
-    // ADDED: Trigger background status refresh
-    if (!isScanning) {
-      xTaskCreatePinnedToCore(refreshAllStatesTask, "RefreshStates", 8192, NULL, 1, NULL, 1);
-    }
   }
   else if (type == WS_EVT_DISCONNECT) {
     Serial.printf("WebSocket client #%u disconnected\n", client->id());
@@ -832,8 +665,7 @@ void onWsEvent(AsyncWebSocket* server, AsyncWebSocketClient* client,
           togglePower(ip);
           delay(100);
           
-          // MODIFIED: Force refresh for this specific device
-          String newState = getPowerState(ip, true);
+          String newState = getPowerState(ip);
           
           JsonDocument updateDoc;
           updateDoc["type"] = "device_update";
@@ -856,7 +688,7 @@ void setup() {
   Serial.begin(115200);
   delay(1000);
   
-  Serial.println("\n\n=== Tasmota Network Scanner (FAST RELOAD) ===");
+  Serial.println("\n\n=== Tasmota Network Scanner ===");
   
   esp_task_wdt_init(30, true);
   esp_task_wdt_add(NULL);
@@ -900,24 +732,13 @@ void setup() {
   Serial.printf("  Scan range: %s%d to %s%d\n", subnetBase.c_str(), startOctet, subnetBase.c_str(), endOctet);
   Serial.printf("  Total IPs to scan: %d\n", endOctet - startOctet + 1);
   Serial.printf("  Parallel scans: %d\n", MAX_PARALLEL_SCANS);
-  Serial.printf("  State cache duration: %dms\n", STATE_CACHE_DURATION);
   
-  // IMPORTANT: Add WebSocket handler FIRST, before other routes
+  server.on("/", HTTP_GET, handleRoot);
   ws.onEvent(onWsEvent);
   server.addHandler(&ws);
-  Serial.println("WebSocket handler registered at /ws");
-  
-  // Then add HTTP routes
-  server.on("/", HTTP_GET, handleRoot);
-  server.on("/favicon.ico", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send(204); // No content
-  });
-  
   server.begin();
   
   Serial.println("HTTP server started");
-  Serial.printf("WebSocket enabled: %s\n", ws.enabled() ? "YES" : "NO");
-  Serial.printf("WebSocket path: %s\n", ws.url());
   Serial.println("Open browser: http://" + WiFi.localIP().toString());
   Serial.println("======================================\n");
   
@@ -927,12 +748,5 @@ void setup() {
 void loop() {
   esp_task_wdt_reset();
   ws.cleanupClients();
-  
-  static unsigned long lastLog = 0;
-  if (millis() - lastLog > 10000) { // Every 10 seconds
-    Serial.printf("[Loop] WS clients: %d, Free heap: %d\n", ws.count(), ESP.getFreeHeap());
-    lastLog = millis();
-  }
-  
   delay(10);
 }
