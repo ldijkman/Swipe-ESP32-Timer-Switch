@@ -50,6 +50,7 @@ void broadcastDevices();
 void broadcastToWebClients(const String& message);
 void loadConfig();
 void saveConfig();
+void refreshAllStatesTask(void* parameter);
 
 // Serve HTML page
 void handleRoot(AsyncWebServerRequest *request) {
@@ -66,7 +67,7 @@ void handleRoot(AsyncWebServerRequest *request) {
   response->print(".control-panel{max-width:1200px;margin:0 auto 20px;display:flex;gap:10px;flex-wrap:wrap;justify-content:center}");
   response->print(".devices-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;max-width:1200px;margin:0 auto}");
   response->print(".device{padding:8px;background:#666;border-radius:6px}");
-  response->print(".device-header{width:calc(100% + 16px);padding:6px;border-radius:4px 4px 0 0;margin:-8px -8px 6px -8px;font-weight:bold;font-size:14px}");
+  response->print(".device-header{width:100%;padding:6px;border-radius:4px 4px 0 0;margin:-8px -8px 6px -8px;font-weight:bold;font-size:14px;box-sizing:border-box}");
   response->print(".on .device-header{background:#4CAF50}");
   response->print(".off .device-header{background:#f44336}");
   response->print(".device-name{font-size:13px;margin:2px 0;color:#fff}");
@@ -627,6 +628,67 @@ void setPowerAll(bool state) {
   broadcastDevices();
 }
 
+// ADDED: Background task to refresh all device states
+void refreshAllStatesTask(void* parameter) {
+  Serial.println("[RefreshStates] Starting background status refresh...");
+  
+  esp_task_wdt_reset();
+  delay(500); // Small delay to let initial cached broadcast complete
+  
+  std::vector<String> deviceIPs;
+  
+  // Get list of device IPs
+  if (xSemaphoreTake(ipListMutex, portMAX_DELAY)) {
+    for (const auto& device : tasmotaDevices) {
+      deviceIPs.push_back(device.ip);
+    }
+    xSemaphoreGive(ipListMutex);
+  }
+  
+  // Refresh each device state
+  bool anyChanged = false;
+  for (const String& ip : deviceIPs) {
+    esp_task_wdt_reset();
+    
+    String oldState = "";
+    if (xSemaphoreTake(ipListMutex, portMAX_DELAY)) {
+      for (const auto& device : tasmotaDevices) {
+        if (device.ip == ip) {
+          oldState = device.lastKnownState;
+          break;
+        }
+      }
+      xSemaphoreGive(ipListMutex);
+    }
+    
+    // Force refresh from device
+    String newState = getPowerState(ip, true);
+    
+    // Check if state changed
+    if (newState != oldState && newState != "UNKNOWN") {
+      anyChanged = true;
+      Serial.printf("[RefreshStates] State changed for %s: %s -> %s\n", 
+                   ip.c_str(), oldState.c_str(), newState.c_str());
+      
+      // Broadcast individual update
+      JsonDocument updateDoc;
+      updateDoc["type"] = "device_update";
+      updateDoc["ip"] = ip;
+      updateDoc["state"] = newState;
+      String updateJson;
+      serializeJson(updateDoc, updateJson);
+      broadcastToWebClients(updateJson);
+    }
+    
+    delay(100); // Small delay between requests to avoid overwhelming network
+  }
+  
+  Serial.printf("[RefreshStates] Background refresh complete. Changed: %s\n", 
+               anyChanged ? "YES" : "NO");
+  
+  vTaskDelete(NULL);
+}
+
 // MODIFIED: Fast broadcast using cached states
 void broadcastDevices() {
   Serial.println("Broadcasting devices to WebSocket clients (using cache)");
@@ -677,6 +739,11 @@ void onWsEvent(AsyncWebSocket* server, AsyncWebSocketClient* client,
     
     // MODIFIED: Instant response using cache
     broadcastDevices();
+    
+    // ADDED: Trigger background status refresh
+    if (!isScanning) {
+      xTaskCreatePinnedToCore(refreshAllStatesTask, "RefreshStates", 8192, NULL, 1, NULL, 1);
+    }
   }
   else if (type == WS_EVT_DISCONNECT) {
     Serial.printf("WebSocket client #%u disconnected\n", client->id());
