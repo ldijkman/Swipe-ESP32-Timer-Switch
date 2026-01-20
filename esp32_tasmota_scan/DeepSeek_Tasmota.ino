@@ -12,7 +12,7 @@
 #include <Preferences.h>
 
 // WiFi credentials
-const char* ssid = "wifik";
+const char* ssid = "wifi";
 const char* password = "pass";
 
 // Network configuration
