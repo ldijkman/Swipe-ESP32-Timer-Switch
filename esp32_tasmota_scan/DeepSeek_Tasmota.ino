@@ -13,7 +13,7 @@
 
 // WiFi credentials
 const char* ssid = "wifik";
-const char* password = "passn";
+const char* password = "pass";
 
 // Network configuration
 IPAddress local_IP;
