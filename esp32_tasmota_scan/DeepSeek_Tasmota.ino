@@ -12,8 +12,8 @@
 #include <Preferences.h>
 
 // WiFi credentials
-const char* ssid = "wifi";
-const char* password = "pass";
+const char* ssid = "wifik";
+const char* password = "passn";
 
 // Network configuration
 IPAddress local_IP;
