@@ -743,6 +743,8 @@ void broadcastDevices() {
 void onWsEvent(AsyncWebSocket* server, AsyncWebSocketClient* client,
                AwsEventType type, void* arg, uint8_t* data, size_t len) {
   
+  Serial.printf("[WS Event] Type: %d from client #%u\n", type, client ? client->id() : 0);
+  
   if (type == WS_EVT_CONNECT) {
     Serial.printf("WebSocket client #%u connected from %s\n", 
                   client->id(), client->remoteIP().toString().c_str());
@@ -900,18 +902,22 @@ void setup() {
   Serial.printf("  Parallel scans: %d\n", MAX_PARALLEL_SCANS);
   Serial.printf("  State cache duration: %dms\n", STATE_CACHE_DURATION);
   
+  // IMPORTANT: Add WebSocket handler FIRST, before other routes
+  ws.onEvent(onWsEvent);
+  server.addHandler(&ws);
+  Serial.println("WebSocket handler registered at /ws");
+  
+  // Then add HTTP routes
   server.on("/", HTTP_GET, handleRoot);
   server.on("/favicon.ico", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send(204); // No content
   });
-  ws.onEvent(onWsEvent);
-  server.addHandler(&ws);
-  
-  Serial.println("WebSocket handler registered at /ws");
   
   server.begin();
   
   Serial.println("HTTP server started");
+  Serial.printf("WebSocket enabled: %s\n", ws.enabled() ? "YES" : "NO");
+  Serial.printf("WebSocket path: %s\n", ws.url());
   Serial.println("Open browser: http://" + WiFi.localIP().toString());
   Serial.println("======================================\n");
   
@@ -921,5 +927,12 @@ void setup() {
 void loop() {
   esp_task_wdt_reset();
   ws.cleanupClients();
+  
+  static unsigned long lastLog = 0;
+  if (millis() - lastLog > 10000) { // Every 10 seconds
+    Serial.printf("[Loop] WS clients: %d, Free heap: %d\n", ws.count(), ESP.getFreeHeap());
+    lastLog = millis();
+  }
+  
   delay(10);
 }
