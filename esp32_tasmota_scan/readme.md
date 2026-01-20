@@ -58,6 +58,10 @@ Tasmota Remota think a nice app well priced for android
 
 tasmotaremota
 
-<img src="https://github.com/ldijkman/Swipe-ESP32-Timer-Switch/blob/main/esp32_tasmota_scan/Screenshot_20260120-055535_Chrome.jpg">
-https://github.com/ldijkman/Swipe-ESP32-Timer-Switch/blob/main/esp32_tasmota_scan/Screenshot_20260120-055603_Chrome.jpg
-https://github.com/ldijkman/Swipe-ESP32-Timer-Switch/blob/main/esp32_tasmota_scan/Screenshot_20260119-054603_Chrome.jpg
+DeepSeek
+
+<img width="1024" height="768"  src="https://github.com/ldijkman/Swipe-ESP32-Timer-Switch/blob/main/esp32_tasmota_scan/Screenshot_20260120-055535_Chrome.jpg">
+
+<img width="1024" height="768"  src="https://github.com/ldijkman/Swipe-ESP32-Timer-Switch/blob/main/esp32_tasmota_scan/Screenshot_20260120-055603_Chrome.jpg">
+
+<img width="1024" height="768"  src="https://github.com/ldijkman/Swipe-ESP32-Timer-Switch/blob/main/esp32_tasmota_scan/Screenshot_20260119-054603_Chrome.jpg">
