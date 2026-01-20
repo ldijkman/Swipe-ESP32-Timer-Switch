@@ -64,4 +64,4 @@ DeepSeek ESP32 Tasmota Scanner forward 1 controll all
 
 <img width="30%" height="30%"   src="https://github.com/ldijkman/Swipe-ESP32-Timer-Switch/blob/main/esp32_tasmota_scan/Screenshot_20260120-055653_Chrome.jpg">
 
-<img width="30%" height="30%"   src="https://github.com/ldijkman/Swipe-ESP32-Timer-Switch/blob/main/esp32_tasmota_scan/Screenshot_20260120-055603_Chrome.jpg">
+<img width="80%" height="80%"   src="https://github.com/ldijkman/Swipe-ESP32-Timer-Switch/blob/main/esp32_tasmota_scan/Screenshot_20260120-055603_Chrome.jpg">
