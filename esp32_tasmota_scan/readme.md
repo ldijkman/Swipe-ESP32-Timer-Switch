@@ -60,6 +60,8 @@ tasmotaremota
 
 DeepSeek ESP32 Tasmota Scanner forward 1 controll all
 
+tasmota iotorero pg01 smart plug 
+
 <img width="30%" height="30%"  src="https://github.com/ldijkman/Swipe-ESP32-Timer-Switch/blob/main/esp32_tasmota_scan/Screenshot_20260120-055535_Chrome.jpg">
 
 common used wifi router presettings and scan range settings
