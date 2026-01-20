@@ -64,6 +64,8 @@ tasmota iotorero pg01 smart plug
 
 https://github.com/ldijkman/Swipe-ESP32-Timer-Switch/blob/main/esp32_tasmota_scan/DeepSeek_Tasmota.ino
 
+an ESP32 scans for tasmota devices on local wifi network 
+
 <img width="30%" height="30%"  src="https://github.com/ldijkman/Swipe-ESP32-Timer-Switch/blob/main/esp32_tasmota_scan/Screenshot_20260120-055535_Chrome.jpg">
 
 common used wifi router presettings and scan range settings
