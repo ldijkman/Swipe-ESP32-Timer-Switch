@@ -47,6 +47,9 @@ Tasmota Remota think a nice app well priced for android
 Tasmota Control app for android (maybe apple)
 Manfred, Carsten und Heike Grings GbR
 
+HomeSwitch - Tasmota Control android app
+Jooova
+
 ---
 
 
