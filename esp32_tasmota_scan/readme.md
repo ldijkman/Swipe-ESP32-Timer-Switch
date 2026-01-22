@@ -50,6 +50,10 @@ Manfred, Carsten und Heike Grings GbR
 HomeSwitch - Tasmota Control android app
 Jooova
 
+i think above all work nice from home network
+
+but if from internet you have to forward all devices expose aal to web
+
 ---
 
 
