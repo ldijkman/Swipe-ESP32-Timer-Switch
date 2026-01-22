@@ -40,9 +40,12 @@ an middle man esp32 server
 
 ---
 
-TIP!
+TIPs!
 
 Tasmota Remota think a nice app well priced for android
+
+Tasmota Control app for android (maybe apple)
+Manfred, Carsten und Heike Grings GbR
 
 ---
 
