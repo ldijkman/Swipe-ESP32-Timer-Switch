@@ -22,6 +22,11 @@ https://www.youtube.com/watch?v=YH7AbhQ37dY
     <strong>Watch the full demo (click the image)</strong>
   </a>
 </div>
+
+
+
+https://ldijkman.github.io/Swipe-ESP32-Timer-Switch/burn/flash.html
+
 ---
 
 
