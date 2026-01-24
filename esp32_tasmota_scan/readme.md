@@ -1,3 +1,28 @@
+
+
+
+
+---
+
+
+burn flash configure esp32 from browser tasmota scanner controller webpage server
+
+Swipe-ESP32-Timer-Switch/docs/burn
+
+https://ldijkman.github.io/Swipe-ESP32-Timer-Switch/burn/flash.html
+
+
+---
+
+
+
+
+
+
+
+
+
+
 an esp32 scans for tasmota devices http url check http://   ip   /cm?cmnd=power)
 
 scans network for tasmota http devices and show on webpage
