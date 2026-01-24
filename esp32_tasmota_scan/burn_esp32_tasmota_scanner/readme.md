@@ -1,5 +1,5 @@
 
-burn flash configure wifi from browser
+burn flash configure esp32 from browser  tasmota scanner controller webpage server
 
 
 Swipe-ESP32-Timer-Switch/docs/burn
