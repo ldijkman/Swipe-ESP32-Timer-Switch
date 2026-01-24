@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ESP32 Tasmota Scanner - Web Flasher</title>
+  <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #1a1a1a;
+      color: #eee;
+    }
+    
+    h1 {
+      color: #0f8;
+      text-align: center;
+    }
+    
+    .container {
+      background: #2a2a2a;
+      border-radius: 10px;
+      padding: 30px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    }
+    
+    .info-box {
+      background: #333;
+      border-left: 4px solid #0f8;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 4px;
+    }
+    
+    .warning-box {
+      background: #442200;
+      border-left: 4px solid #ff9800;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 4px;
+    }
+    
+    .step {
+      background: #333;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 5px;
+      border-left: 3px solid #2196F3;
+    }
+    
+    .step-number {
+      display: inline-block;
+      background: #2196F3;
+      color: white;
+      width: 30px;
+      height: 30px;
+      line-height: 30px;
+      text-align: center;
+      border-radius: 50%;
+      margin-right: 10px;
+      font-weight: bold;
+    }
+    
+    esp-web-install-button {
+      display: block;
+      margin: 30px auto;
+    }
+    
+    esp-web-install-button::part(button) {
+      background: #0f8;
+      color: #000;
+      font-size: 18px;
+      padding: 15px 30px;
+      border-radius: 5px;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    
+    esp-web-install-button::part(button):hover {
+      background: #0c6;
+    }
+    
+    .feature-list {
+      list-style: none;
+      padding: 0;
+    }
+    
+    .feature-list li {
+      padding: 8px 0;
+      padding-left: 30px;
+      position: relative;
+    }
+    
+    .feature-list li:before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: #0f8;
+      font-weight: bold;
+      font-size: 20px;
+    }
+    
+    .browser-support {
+      text-align: center;
+      margin: 20px 0;
+      padding: 15px;
+      background: #333;
+      border-radius: 5px;
+    }
+    
+    .browser-icon {
+      display: inline-block;
+      margin: 0 10px;
+      color: #0f8;
+    }
+    
+    a {
+      color: #4da6ff;
+      text-decoration: none;
+    }
+    
+    a:hover {
+      color: #80c1ff;
+      text-decoration: underline;
+    }
+    
+    .footer {
+      text-align: center;
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid #444;
+      color: #888;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔧 ESP32 Tasmota Scanner - Web Flasher</h1>
+  
+  <div class="container">
+    <div class="info-box">
+      <strong>📱 Flash your ESP32 directly from your browser!</strong>
+      <p>No Arduino IDE or Python required. Works on Chrome, Edge, and Opera.</p>
+    </div>
+    
+    <h2>✨ Features</h2>
+    <ul class="feature-list">
+      <li>Network scanner for Tasmota devices</li>
+      <li>Parallel scanning (configurable 1-20 tasks)</li>
+      <li>Toggle all devices ON/OFF</li>
+      <li>Edit device names directly from web interface</li>
+      <li>Improv Wi-Fi support (configure via browser)</li>
+      <li>Module information display</li>
+      <li>Real-time state updates</li>
+      <li>Mobile-friendly responsive design</li>
+    </ul>
+    
+    <h2>📋 Installation Steps</h2>
+    
+    <div class="step">
+      <span class="step-number">1</span>
+      <strong>Connect Your ESP32</strong>
+      <p>Plug your ESP32 into your computer via USB cable.</p>
+    </div>
+    
+    <div class="step">
+      <span class="step-number">2</span>
+      <strong>Click Install Button</strong>
+      <p>Click the "Install" button below and select your ESP32's serial port.</p>
+    </div>
+    
+    <div class="step">
+      <span class="step-number">3</span>
+      <strong>Configure Wi-Fi</strong>
+      <p>After flashing, use Improv Wi-Fi to configure your network credentials.</p>
+    </div>
+    
+    <div class="step">
+      <span class="step-number">4</span>
+      <strong>Access Web Interface</strong>
+      <p>Open the IP address shown in serial monitor to access the control panel.</p>
+    </div>
+    
+    <div class="warning-box">
+      <strong>⚠️ Important Notes:</strong>
+      <ul>
+        <li>This only works in Chrome, Edge, or Opera browsers</li>
+        <li>Make sure no other program is using the serial port</li>
+        <li>Your ESP32 will be erased and reprogrammed</li>
+        <li>Default Wi-Fi credentials are pre-configured as fallback</li>
+      </ul>
+    </div>
+    
+    <!-- ESP Web Tools Install Button -->
+    <esp-web-install-button
+      manifest="./manifest.json"
+    >
+      <button slot="activate">Install ESP32 Tasmota Scanner</button>
+      <span slot="unsupported">
+        Your browser doesn't support Web Serial. Please use Chrome, Edge, or Opera.
+      </span>
+      <span slot="not-allowed">
+        Permission denied. Make sure you're using HTTPS.
+      </span>
+    </esp-web-install-button>
+    
+    <div class="browser-support">
+      <strong>Supported Browsers:</strong><br>
+      <span class="browser-icon">Chrome ✓</span>
+      <span class="browser-icon">Edge ✓</span>
+      <span class="browser-icon">Opera ✓</span>
+    </div>
+    
+    <h2>🔧 After Installation</h2>
+    <p>Once installed, you can:</p>
+    <ul>
+      <li><strong>Configure Wi-Fi:</strong> Visit <a href="https://www.improv-wifi.com/" target="_blank">improv-wifi.com</a> to set up your network</li>
+      <li><strong>Access Settings:</strong> Click the "Settings" button to configure scan parameters</li>
+      <li><strong>Scan Network:</strong> Click "Scan Network" to discover Tasmota devices</li>
+      <li><strong>Control Devices:</strong> Toggle individual devices or use "All ON/OFF" buttons</li>
+    </ul>
+    
+    <h2>📖 Default Configuration</h2>
+    <ul>
+      <li><strong>Network Range:</strong> 10.10.100.100 - 10.10.100.140</li>
+      <li><strong>Parallel Scans:</strong> 12 concurrent tasks</li>
+      <li><strong>Scan Timeout:</strong> 1000ms per IP</li>
+      <li><strong>Fallback Wi-Fi:</strong> Bangert_30_Andijk</li>
+    </ul>
+    
+    <div class="footer">
+      <p>ESP32 Tasmota Network Scanner v1.0</p>
+      <p><a href="https://github.com/ldijkman/Swipe-ESP32-Timer-Switch/tree/main/esp32_tasmota_scan" target="_blank">GitHub Repository</a></p>
+    </div>
+  </div>
+</body>
+</html>
