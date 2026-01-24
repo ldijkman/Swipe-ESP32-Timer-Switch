@@ -20,7 +20,15 @@ Here is a demo video of the project in action:
 
 <iframe width="939" height="704" src="https://www.youtube.com/embed/YH7AbhQ37dY" title="ESP32 Tasmota scanner controller install and configure from browser" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
-
+<div align="center">
+  <a href="https://www.youtube.com/watch?v=YH7AbhQ37dY">
+    <img src="https://img.youtube.com/vi/YH7AbhQ37dY/0.jpg" 
+         alt="ESP32 Tasmota scanner controller install and configure from browser" 
+         style="width:100%; max-width:640px;">
+    <br><br>
+    <strong>Watch the full demo (click the image)</strong>
+  </a>
+</div>
 ---
 
 
