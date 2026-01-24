@@ -12,17 +12,16 @@
 #include <Preferences.h>
 
 // WiFi credentials
-const char* ssid = "wifibradcastedintheair";
-const char* password = "wifipass";
+const char* ssid = "wifi";
+const char* password = "pass";
 
 // Network configuration
 IPAddress local_IP;
 String subnetBase = "10.10.100.";
 int startOctet   = 100;
 int endOctet     = 140;
-
-#define MAX_PARALLEL_SCANS 12
-#define SCAN_TIMEOUT_MS 1000
+int maxParallelScans = 12;
+int scanTimeoutMs = 1000;
 
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
@@ -81,7 +80,7 @@ String urlEncode(const String& str) {
 }
 
 void broadcastDevicesInstant() {
-  Serial.println("Broadcasting devices instantly (cached states only)");
+  Serial.println(F("Broadcasting devices instantly (cached states only)"));
   
   esp_task_wdt_reset();
   JsonDocument doc;
@@ -104,12 +103,13 @@ void broadcastDevicesInstant() {
   serializeJson(doc, json);
   broadcastToWebClients(json);
   
-  Serial.printf("Instant broadcast complete. Total devices: %d\n", tasmotaDevices.size());
+  Serial.print(F("Instant broadcast complete. Total devices: "));
+  Serial.println(tasmotaDevices.size());
   esp_task_wdt_reset();
 }
 
 void updateDeviceStatesTask(void* parameter) {
-  Serial.println("Updating device states in background...");
+  Serial.println(F("Updating device states in background..."));
   delay(100);
   
   if (xSemaphoreTake(ipListMutex, portMAX_DELAY)) {
@@ -117,7 +117,9 @@ void updateDeviceStatesTask(void* parameter) {
       esp_task_wdt_reset();
       
       if (device.cachedState.length() > 0 && (millis() - device.lastStateUpdate) < 5000) {
-        Serial.printf("  Skipping %s - state is fresh\n", device.ip.c_str());
+        Serial.print(F("  Skipping "));
+        Serial.print(device.ip);
+        Serial.println(F(" - state is fresh"));
         continue;
       }
       
@@ -137,12 +139,15 @@ void updateDeviceStatesTask(void* parameter) {
       delay(50);
       xSemaphoreTake(ipListMutex, portMAX_DELAY);
       
-      Serial.printf("  Updated: %s -> %s\n", device.ip.c_str(), state.c_str());
+      Serial.print(F("  Updated: "));
+      Serial.print(device.ip);
+      Serial.print(F(" -> "));
+      Serial.println(state);
     }
     xSemaphoreGive(ipListMutex);
   }
   
-  Serial.println("Background state update complete");
+  Serial.println(F("Background state update complete"));
   vTaskDelete(NULL);
 }
 
@@ -161,7 +166,7 @@ void handleRoot(AsyncWebServerRequest *request) {
   response->print(".control-panel{max-width:1200px;margin:0 auto 20px;display:flex;gap:10px;flex-wrap:wrap;justify-content:center}");
   response->print(".devices-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;max-width:1200px;margin:0 auto}");
   response->print(".device{padding:8px;background:#666;border-radius:6px}");
-  response->print(".device-header{width:calc(100% + 3px);padding:6px;border-radius:4px 4px 0 0;margin:-8px -8px 6px -8px;font-weight:bold;font-size:14px;cursor:pointer}");
+  response->print(".device-header{width:calc(100% + 16px);padding:6px;border-radius:4px 4px 0 0;margin:-8px -8px 6px -8px;font-weight:bold;font-size:14px;cursor:pointer}");
   response->print(".on .device-header{background:#4CAF50}");
   response->print(".off .device-header{background:#f44336}");
   response->print(".device-name{font-size:13px;margin:2px 0;color:#fff}");
@@ -176,14 +181,14 @@ void handleRoot(AsyncWebServerRequest *request) {
   response->print(".config-btn{background:#FF9800;color:white;padding:8px 20px;font-size:16px}");
   response->print(".toggle{width:calc(50% - 2px);background:#555;color:white;margin-top:4px;display:inline-block}");
   response->print(".toggle:hover{background:#777}");
-  response->print(".edit-btn{width:calc(50% - 2px);background:#555;color:white;margin-top:4px;display:inline-block;font-size:13px}");
+  response->print(".edit-btn{width:calc(50% - 2px);background:#FF9800;color:white;margin-top:4px;display:inline-block;font-size:13px}");
   response->print(".edit-btn:hover{background:#FFA726}");
   response->print(".progress-section{margin:15px;padding:10px;background:#333;border-radius:5px}");
   response->print(".progress-bar{width:100%;height:18px;background:#444;border-radius:10px;overflow:hidden}");
   response->print(".progress-fill{height:100%;background:#0f8;width:0%;transition:width 0.3s}");
   response->print(".progress-section p{margin:8px 0;font-size:14px}");
-  response->print(".modal{display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,0.8)}");
-  response->print(".modal-content{background:#222;margin:5% auto;padding:20px;border:1px solid #888;width:90%;max-width:600px;border-radius:10px;color:#eee}");
+  response->print(".modal{display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,0.8);overflow-y:auto}");
+  response->print(".modal-content{background:#222;margin:20px auto;padding:20px;border:1px solid #888;width:90%;max-width:600px;border-radius:10px;color:#eee;max-height:90vh;overflow-y:auto}");
   response->print(".modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}");
   response->print(".close{color:#aaa;font-size:28px;font-weight:bold;cursor:pointer}");
   response->print(".close:hover{color:#fff}");
@@ -236,6 +241,12 @@ void handleRoot(AsyncWebServerRequest *request) {
   response->print("<div class='form-group'><label>End IP (Last Octet)</label>");
   response->print("<input type='number' id='endOctet' min='1' max='254' placeholder='254'></div>");
   response->print("<p style='color:#aaa;font-size:12px;margin-top:10px'>Will scan from <span id='rangePreview'>-</span></p></div>");
+  response->print("<div class='config-section'><h3>Scan Settings</h3>");
+  response->print("<div class='form-group'><label>Parallel Scans (1-20)</label>");
+  response->print("<input type='number' id='maxScans' min='1' max='20' placeholder='12'></div>");
+  response->print("<div class='form-group'><label>Timeout per IP (ms)</label>");
+  response->print("<input type='number' id='scanTimeout' min='500' max='5000' step='100' placeholder='1000'></div>");
+  response->print("<p style='color:#aaa;font-size:12px;margin-top:5px'>More parallel scans = faster but uses more memory. Lower timeout = faster but may miss devices.</p></div>");
   response->print("<button class='save-btn' id='saveBtn'>Save and Apply</button>");
   response->print("</div></div>");
   
@@ -266,7 +277,9 @@ void handleRoot(AsyncWebServerRequest *request) {
   response->print("ws.onmessage=function(e){console.log('Received:',e.data);var d=JSON.parse(e.data);");
   response->print("if(d.type==='config'){document.getElementById('subnetBase').value=d.subnet||'';");
   response->print("document.getElementById('startOctet').value=d.start||2;");
-  response->print("document.getElementById('endOctet').value=d.end||254;updateRangePreview()}");
+  response->print("document.getElementById('endOctet').value=d.end||254;");
+  response->print("document.getElementById('maxScans').value=d.maxScans||12;");
+  response->print("document.getElementById('scanTimeout').value=d.timeout||1000;updateRangePreview()}");
   response->print("else if(d.type==='devices'){var html='';for(var i=0;i<d.list.length;i++){");
   response->print("var dev=d.list[i];var sc=dev.state.indexOf('ON')>=0?'on':'off';");
   response->print("var dn=dev.devicename||'Unknown';var fn=dev.friendlyname||dn;");
@@ -317,7 +330,8 @@ void handleRoot(AsyncWebServerRequest *request) {
   response->print("document.getElementById('editDeviceIP').value=editingIP;");
   response->print("document.getElementById('editFriendlyName').value=this.getAttribute('data-friendly');");
   response->print("document.getElementById('editDeviceName').value=this.getAttribute('data-device');");
-  response->print("document.getElementById('editModal').style.display='block'})}");
+  response->print("document.getElementById('editModal').style.display='block';");
+  response->print("document.body.style.overflow='hidden'})}");
   
   response->print("function scan(){vibrate(100);if(!wsConnected){alert('Not connected!');return}");
   response->print("ws.send(JSON.stringify({action:'scan'}));document.getElementById('scanBtn').disabled=true}");
@@ -325,9 +339,12 @@ void handleRoot(AsyncWebServerRequest *request) {
   response->print("ws.send(JSON.stringify({action:'all_on'}))}");
   response->print("function allOff(){vibrate(100);if(!wsConnected){alert('Not connected!');return}");
   response->print("ws.send(JSON.stringify({action:'all_off'}))}");
-  response->print("function openConfig(){vibrate(100);document.getElementById('configModal').style.display='block';updateRangePreview()}");
-  response->print("function closeConfig(){vibrate(100);document.getElementById('configModal').style.display='none'}");
-  response->print("function closeEditModal(){vibrate(100);document.getElementById('editModal').style.display='none'}");
+  response->print("function openConfig(){vibrate(100);document.getElementById('configModal').style.display='block';");
+  response->print("document.body.style.overflow='hidden';updateRangePreview()}");
+  response->print("function closeConfig(){vibrate(100);document.getElementById('configModal').style.display='none';");
+  response->print("document.body.style.overflow='auto'}");
+  response->print("function closeEditModal(){vibrate(100);document.getElementById('editModal').style.display='none';");
+  response->print("document.body.style.overflow='auto'}");
   response->print("function setPreset(s,st,e){vibrate(100);document.getElementById('subnetBase').value=s;");
   response->print("document.getElementById('startOctet').value=st;document.getElementById('endOctet').value=e;updateRangePreview()}");
   response->print("function updateRangePreview(){var s=document.getElementById('subnetBase').value;");
@@ -337,9 +354,13 @@ void handleRoot(AsyncWebServerRequest *request) {
   response->print("var s=document.getElementById('subnetBase').value;");
   response->print("var st=parseInt(document.getElementById('startOctet').value);");
   response->print("var e=parseInt(document.getElementById('endOctet').value);");
+  response->print("var ms=parseInt(document.getElementById('maxScans').value);");
+  response->print("var to=parseInt(document.getElementById('scanTimeout').value);");
   response->print("if(!s||isNaN(st)||isNaN(e)){alert('Invalid input');return}");
   response->print("if(st<1||st>254||e<1||e>254||st>e){alert('Invalid range');return}");
-  response->print("ws.send(JSON.stringify({action:'save_config',subnet:s,start:st,end:e}));");
+  response->print("if(isNaN(ms)||ms<1||ms>20){alert('Parallel scans must be 1-20');return}");
+  response->print("if(isNaN(to)||to<500||to>5000){alert('Timeout must be 500-5000ms');return}");
+  response->print("ws.send(JSON.stringify({action:'save_config',subnet:s,start:st,end:e,maxScans:ms,timeout:to}));");
   response->print("closeConfig();alert('Configuration saved!')}");
   
   response->print("function saveNames(){vibrate(100);if(!wsConnected){alert('Not connected!');return}");
@@ -381,7 +402,8 @@ void handleRoot(AsyncWebServerRequest *request) {
   response->print("document.getElementById('endOctet').addEventListener('input',updateRangePreview);");
   response->print("window.onclick=function(e){var cm=document.getElementById('configModal');");
   response->print("var em=document.getElementById('editModal');");
-  response->print("if(e.target==cm)closeConfig();if(e.target==em)closeEditModal()}");
+  response->print("if(e.target==cm){closeConfig()}");
+  response->print("if(e.target==em){closeEditModal()}}");
   response->print("</script></body></html>");
   
   request->send(response);
@@ -394,6 +416,8 @@ void loadConfig() {
   if (savedSubnet.length() > 0) subnetBase = savedSubnet;
   startOctet = preferences.getInt("start", 100);
   endOctet = preferences.getInt("end", 140);
+  maxParallelScans = preferences.getInt("maxScans", 12);
+  scanTimeoutMs = preferences.getInt("timeout", 1000);
   preferences.end();
 }
 
@@ -402,6 +426,8 @@ void saveConfig() {
   preferences.putString("subnet", subnetBase);
   preferences.putInt("start", startOctet);
   preferences.putInt("end", endOctet);
+  preferences.putInt("maxScans", maxParallelScans);
+  preferences.putInt("timeout", scanTimeoutMs);
   preferences.end();
 }
 
@@ -490,10 +516,11 @@ String getModule(const String& ip) {
 bool checkTasmota(const String& ip) {
   esp_task_wdt_reset();
   
-  Serial.printf("Checking IP: %s\n", ip.c_str());
+  Serial.print(F("Checking IP: "));
+  Serial.println(ip);
   
   HTTPClient http;
-  http.setTimeout(SCAN_TIMEOUT_MS);
+  http.setTimeout(scanTimeoutMs);
   http.begin("http://" + ip + "/cm?cmnd=Power");
   int httpCode = http.GET();
   esp_task_wdt_reset();
@@ -509,10 +536,16 @@ bool checkTasmota(const String& ip) {
             (response.indexOf("\"ON\"") >= 0 || response.indexOf("\"OFF\"") >= 0));
     
     if (isTasmota) {
-      Serial.printf("  ✓ Found Tasmota at: %s\n", ip.c_str());
-      Serial.printf("    Response: %s\n", response.c_str());
+      Serial.print(F("  ✓ Found Tasmota at: "));
+      Serial.println(ip);
+      Serial.print(F("    Response: "));
+      Serial.println(response);
     } else {
-      Serial.printf("  ✗ Not Tasmota at: %s (response: %s)\n", ip.c_str(), response.substring(0, 50).c_str());
+      Serial.print(F("  ✗ Not Tasmota at: "));
+      Serial.print(ip);
+      Serial.print(F(" (response: "));
+      Serial.print(response.substring(0, 50));
+      Serial.println(F(")"));
     }
     
     return isTasmota;
@@ -520,9 +553,13 @@ bool checkTasmota(const String& ip) {
   http.end();
   
   if (httpCode > 0) {
-    Serial.printf("  HTTP error %d from %s\n", httpCode, ip.c_str());
+    Serial.print(F("  HTTP error "));
+    Serial.print(httpCode);
+    Serial.print(F(" from "));
+    Serial.println(ip);
   } else {
-    Serial.printf("  Connection failed to %s\n", ip.c_str());
+    Serial.print(F("  Connection failed to "));
+    Serial.println(ip);
   }
   
   return false;
@@ -533,7 +570,10 @@ void scanRangeTask(void* parameter) {
   int start = range[0];
   int end = range[1];
   
-  Serial.printf("[Task] Scanning range: %d to %d\n", start, end);
+  Serial.print(F("[Task] Scanning range: "));
+  Serial.print(start);
+  Serial.print(F(" to "));
+  Serial.println(end);
   
   for (int i = start; i <= end; i++) {
     esp_task_wdt_reset();
@@ -544,8 +584,12 @@ void scanRangeTask(void* parameter) {
       String module = getModule(ip);
       if (friendlyName.length() == 0) friendlyName = deviceName;
       
-      Serial.printf("  Device: %s, Friendly: %s, Module: %s\n", 
-                    deviceName.c_str(), friendlyName.c_str(), module.c_str());
+      Serial.print(F("  Device: "));
+      Serial.print(deviceName);
+      Serial.print(F(", Friendly: "));
+      Serial.print(friendlyName);
+      Serial.print(F(", Module: "));
+      Serial.println(module);
       
       if (xSemaphoreTake(ipListMutex, portMAX_DELAY)) {
         DeviceInfo device;
@@ -563,13 +607,15 @@ void scanRangeTask(void* parameter) {
     delay(10);
   }
   delete[] range;
-  Serial.printf("[Task] Range scan complete\n");
+  Serial.println(F("[Task] Range scan complete"));
   vTaskSuspend(NULL);
 }
 
 void parallelScanTask(void* parameter) {
-  Serial.println("[ParallelScan] Starting parallel scan...");
-  Serial.printf("[Memory] Free heap: %d bytes\n", ESP.getFreeHeap());
+  Serial.println(F("[ParallelScan] Starting parallel scan..."));
+  Serial.print(F("[Memory] Free heap: "));
+  Serial.print(ESP.getFreeHeap());
+  Serial.println(F(" bytes"));
   
   esp_task_wdt_reset();
   isScanning = true;
@@ -581,14 +627,17 @@ void parallelScanTask(void* parameter) {
   
   totalScannedIPs = 0;
   int totalIPs = endOctet - startOctet + 1;
-  int ipsPerTask = ceil((float)totalIPs / MAX_PARALLEL_SCANS);
+  int ipsPerTask = ceil((float)totalIPs / maxParallelScans);
   
-  Serial.printf("[ParallelScan] Total IPs: %d, IPs per task: %d\n", totalIPs, ipsPerTask);
+  Serial.print(F("[ParallelScan] Total IPs: "));
+  Serial.print(totalIPs);
+  Serial.print(F(", IPs per task: "));
+  Serial.println(ipsPerTask);
   
-  TaskHandle_t taskHandles[MAX_PARALLEL_SCANS];
-  memset(taskHandles, 0, sizeof(taskHandles));
+  TaskHandle_t* taskHandles = new TaskHandle_t[maxParallelScans];
+  memset(taskHandles, 0, sizeof(TaskHandle_t) * maxParallelScans);
   
-  for (int taskNum = 0; taskNum < MAX_PARALLEL_SCANS; taskNum++) {
+  for (int taskNum = 0; taskNum < maxParallelScans; taskNum++) {
     int taskStart = startOctet + (taskNum * ipsPerTask);
     int taskEnd = min(startOctet + ((taskNum + 1) * ipsPerTask) - 1, endOctet);
     if (taskStart > endOctet) break;
@@ -600,7 +649,12 @@ void parallelScanTask(void* parameter) {
     char taskName[20];
     snprintf(taskName, sizeof(taskName), "Scan%d", taskNum);
     
-    Serial.printf("[ParallelScan] Creating task %d for IPs %d-%d\n", taskNum, taskStart, taskEnd);
+    Serial.print(F("[ParallelScan] Creating task "));
+    Serial.print(taskNum);
+    Serial.print(F(" for IPs "));
+    Serial.print(taskStart);
+    Serial.print(F("-"));
+    Serial.println(taskEnd);
     
     xTaskCreatePinnedToCore(scanRangeTask, taskName, 8192, (void*)range, 1, &taskHandles[taskNum], 0);
     esp_task_wdt_reset();
@@ -615,8 +669,15 @@ void parallelScanTask(void* parameter) {
       float progress = (float)totalScannedIPs / totalIPs * 100.0;
       int currentIP = startOctet + totalScannedIPs;
       
-      Serial.printf("[ParallelScan] Progress: %.1f%% (%d/%d) - IP: %s%d\n", 
-                    progress, totalScannedIPs, totalIPs, subnetBase.c_str(), currentIP);
+      Serial.print(F("[ParallelScan] Progress: "));
+      Serial.print(progress, 1);
+      Serial.print(F("% ("));
+      Serial.print(totalScannedIPs);
+      Serial.print(F("/"));
+      Serial.print(totalIPs);
+      Serial.print(F(") - IP: "));
+      Serial.print(subnetBase);
+      Serial.println(currentIP);
       
       JsonDocument doc;
       doc["type"] = "scan_progress";
@@ -633,7 +694,7 @@ void parallelScanTask(void* parameter) {
     }
     
     bool allDone = true;
-    for (int i = 0; i < MAX_PARALLEL_SCANS; i++) {
+    for (int i = 0; i < maxParallelScans; i++) {
       if (taskHandles[i] != NULL) {
         eTaskState state = eTaskGetState(taskHandles[i]);
         if (state != eDeleted && state != eInvalid && state != eSuspended) {
@@ -647,15 +708,21 @@ void parallelScanTask(void* parameter) {
   
   delay(100);
   
-  Serial.println("[ParallelScan] Cleaning up tasks...");
-  for (int i = 0; i < MAX_PARALLEL_SCANS; i++) {
+  Serial.println(F("[ParallelScan] Cleaning up tasks..."));
+  for (int i = 0; i < maxParallelScans; i++) {
     if (taskHandles[i] != NULL) vTaskDelete(taskHandles[i]);
   }
   
+  delete[] taskHandles;
+  
   delay(100);
   isScanning = false;
-  Serial.printf("[ParallelScan] Scan complete. Found %d devices\n", tasmotaDevices.size());
-  Serial.printf("[Memory] Free heap after scan: %d bytes\n", ESP.getFreeHeap());
+  Serial.print(F("[ParallelScan] Scan complete. Found "));
+  Serial.print(tasmotaDevices.size());
+  Serial.println(F(" devices"));
+  Serial.print(F("[Memory] Free heap after scan: "));
+  Serial.print(ESP.getFreeHeap());
+  Serial.println(F(" bytes"));
   
   broadcastDevices();
   vTaskDelete(NULL);
@@ -684,7 +751,10 @@ String getPowerState(const String& ip) {
     String response = http.getString();
     http.end();
     
-    Serial.printf("  Power response from %s: %s\n", ip.c_str(), response.c_str());
+    Serial.print(F("  Power response from "));
+    Serial.print(ip);
+    Serial.print(F(": "));
+    Serial.println(response);
     
     if (response.indexOf("\"ON\"") >= 0) return "ON";
     if (response.indexOf("\"OFF\"") >= 0) return "OFF";
@@ -697,7 +767,8 @@ String getPowerState(const String& ip) {
 }
 
 void togglePower(const String& ip) {
-  Serial.printf("Toggling power for: %s\n", ip.c_str());
+  Serial.print(F("Toggling power for: "));
+  Serial.println(ip);
   
   esp_task_wdt_reset();
   HTTPClient http;
@@ -707,12 +778,16 @@ void togglePower(const String& ip) {
   String response = http.getString();
   http.end();
   
-  Serial.printf("  Toggle response (%d): %s\n", code, response.c_str());
+  Serial.print(F("  Toggle response ("));
+  Serial.print(code);
+  Serial.print(F("): "));
+  Serial.println(response);
   delay(200);
 }
 
 void setPowerAll(bool state) {
-  Serial.printf("Setting all lights to: %s\n", state ? "ON" : "OFF");
+  Serial.print(F("Setting all lights to: "));
+  Serial.println(state ? F("ON") : F("OFF"));
   
   if (xSemaphoreTake(ipListMutex, portMAX_DELAY)) {
     for (auto& device : tasmotaDevices) {
@@ -744,8 +819,10 @@ void onWsEvent(AsyncWebSocket* server, AsyncWebSocketClient* client,
                AwsEventType type, void* arg, uint8_t* data, size_t len) {
   
   if (type == WS_EVT_CONNECT) {
-    Serial.printf("WebSocket client #%u connected from %s\n", 
-                  client->id(), client->remoteIP().toString().c_str());
+    Serial.print(F("WebSocket client #"));
+    Serial.print(client->id());
+    Serial.print(F(" connected from "));
+    Serial.println(client->remoteIP().toString());
     
     if (xSemaphoreTake(clientListMutex, portMAX_DELAY)) {
       webClients.push_back(client->id());
@@ -755,7 +832,9 @@ void onWsEvent(AsyncWebSocket* server, AsyncWebSocketClient* client,
     broadcastDevices();
   }
   else if (type == WS_EVT_DISCONNECT) {
-    Serial.printf("WebSocket client #%u disconnected\n", client->id());
+    Serial.print(F("WebSocket client #"));
+    Serial.print(client->id());
+    Serial.println(F(" disconnected"));
     
     if (xSemaphoreTake(clientListMutex, portMAX_DELAY)) {
       webClients.erase(std::remove(webClients.begin(), webClients.end(), client->id()), webClients.end());
@@ -768,7 +847,8 @@ void onWsEvent(AsyncWebSocket* server, AsyncWebSocketClient* client,
       data[len] = 0;
       String msg = (char*)data;
       
-      Serial.printf("WebSocket message: %s\n", msg.c_str());
+      Serial.print(F("WebSocket message: "));
+      Serial.println(msg);
       
       JsonDocument doc;
       if (deserializeJson(doc, msg)) return;
@@ -781,6 +861,8 @@ void onWsEvent(AsyncWebSocket* server, AsyncWebSocketClient* client,
         configDoc["subnet"] = subnetBase;
         configDoc["start"] = startOctet;
         configDoc["end"] = endOctet;
+        configDoc["maxScans"] = maxParallelScans;
+        configDoc["timeout"] = scanTimeoutMs;
         String configJson;
         serializeJson(configDoc, configJson);
         client->text(configJson);
@@ -789,21 +871,35 @@ void onWsEvent(AsyncWebSocket* server, AsyncWebSocketClient* client,
         String newSubnet = doc["subnet"] | "";
         int newStart = doc["start"] | startOctet;
         int newEnd = doc["end"] | endOctet;
+        int newMaxScans = doc["maxScans"] | maxParallelScans;
+        int newTimeout = doc["timeout"] | scanTimeoutMs;
         
-        if (newSubnet.length() > 0 && newStart > 0 && newEnd > 0 && newStart <= newEnd) {
+        if (newSubnet.length() > 0 && newStart > 0 && newEnd > 0 && newStart <= newEnd &&
+            newMaxScans >= 1 && newMaxScans <= 20 && newTimeout >= 500 && newTimeout <= 5000) {
           subnetBase = newSubnet;
           if (!subnetBase.endsWith(".")) subnetBase += ".";
           startOctet = newStart;
           endOctet = newEnd;
+          maxParallelScans = newMaxScans;
+          scanTimeoutMs = newTimeout;
           saveConfig();
           
-          Serial.println("Configuration updated:");
-          Serial.printf("  Subnet: %s\n", subnetBase.c_str());
-          Serial.printf("  Range: %d - %d\n", startOctet, endOctet);
+          Serial.println(F("Configuration updated:"));
+          Serial.print(F("  Subnet: "));
+          Serial.println(subnetBase);
+          Serial.print(F("  Range: "));
+          Serial.print(startOctet);
+          Serial.print(F(" - "));
+          Serial.println(endOctet);
+          Serial.print(F("  Max Parallel Scans: "));
+          Serial.println(maxParallelScans);
+          Serial.print(F("  Scan Timeout: "));
+          Serial.print(scanTimeoutMs);
+          Serial.println(F("ms"));
         }
       }
       else if (action == "scan") {
-        Serial.println("Received scan request");
+        Serial.println(F("Received scan request"));
         if (!isScanning) {
           JsonDocument startDoc;
           startDoc["type"] = "scan_start";
@@ -811,7 +907,7 @@ void onWsEvent(AsyncWebSocket* server, AsyncWebSocketClient* client,
           serializeJson(startDoc, startJson);
           broadcastToWebClients(startJson);
           
-          Serial.println("Starting parallel scan task...");
+          Serial.println(F("Starting parallel scan task..."));
           xTaskCreatePinnedToCore(parallelScanTask, "ParallelScan", 12288, NULL, 1, &scanTaskHandle, 1);
         } else {
           client->text("{\"type\":\"info\",\"msg\":\"Scan already in progress\"}");
@@ -844,7 +940,10 @@ void onWsEvent(AsyncWebSocket* server, AsyncWebSocketClient* client,
           serializeJson(updateDoc, updateJson);
           broadcastToWebClients(updateJson);
           
-          Serial.printf("Updated device %s -> %s\n", ip.c_str(), newState.c_str());
+          Serial.print(F("Updated device "));
+          Serial.print(ip);
+          Serial.print(F(" -> "));
+          Serial.println(newState);
         }
       }
       else if (action == "rename") {
@@ -853,8 +952,13 @@ void onWsEvent(AsyncWebSocket* server, AsyncWebSocketClient* client,
         String deviceName = doc["devicename"] | "";
         
         if (ip.length() > 0 && friendlyName.length() > 0 && deviceName.length() > 0) {
-          Serial.printf("Renaming device %s: FriendlyName='%s', DeviceName='%s'\n", 
-                        ip.c_str(), friendlyName.c_str(), deviceName.c_str());
+          Serial.print(F("Renaming device "));
+          Serial.print(ip);
+          Serial.print(F(": FriendlyName='"));
+          Serial.print(friendlyName);
+          Serial.print(F("', DeviceName='"));
+          Serial.print(deviceName);
+          Serial.println(F("'"));
           
           esp_task_wdt_reset();
           HTTPClient http;
@@ -866,7 +970,10 @@ void onWsEvent(AsyncWebSocket* server, AsyncWebSocketClient* client,
           int code1 = http.GET();
           String response1 = http.getString();
           http.end();
-          Serial.printf("  FriendlyName response (%d): %s\n", code1, response1.c_str());
+          Serial.print(F("  FriendlyName response ("));
+          Serial.print(code1);
+          Serial.print(F("): "));
+          Serial.println(response1);
           
           delay(200);
           
@@ -876,7 +983,10 @@ void onWsEvent(AsyncWebSocket* server, AsyncWebSocketClient* client,
           int code2 = http.GET();
           String response2 = http.getString();
           http.end();
-          Serial.printf("  DeviceName response (%d): %s\n", code2, response2.c_str());
+          Serial.print(F("  DeviceName response ("));
+          Serial.print(code2);
+          Serial.print(F("): "));
+          Serial.println(response2);
           
           // Update cached device info
           if (xSemaphoreTake(ipListMutex, portMAX_DELAY)) {
@@ -907,12 +1017,12 @@ void setup() {
   Serial.begin(115200);
   delay(1000);
   
-  Serial.println("\n\n=== Tasmota Network Scanner ===");
+  Serial.println(F("\n\n=== Tasmota Network Scanner ==="));
   
   esp_task_wdt_init(30, true);
   esp_task_wdt_add(NULL);
   
-  Serial.println("Watchdog timer configured (30s timeout)");
+  Serial.println(F("Watchdog timer configured (30s timeout)"));
   
   loadConfig();
   
@@ -922,44 +1032,57 @@ void setup() {
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
   
-  Serial.printf("Connecting to WiFi: %s", ssid);
+  Serial.print(F("Connecting to WiFi: "));
+  Serial.print(ssid);
   
   unsigned long startTime = millis();
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
-    Serial.print(".");
+    Serial.print(F("."));
     esp_task_wdt_reset();
     if (millis() - startTime > 15000) {
-      Serial.println("\nWiFi connection timeout!");
+      Serial.println(F("\nWiFi connection timeout!"));
       break;
     }
   }
   
   if (WiFi.status() == WL_CONNECTED) {
-    Serial.println("\nWiFi connected!");
-    Serial.print("IP address: ");
+    Serial.println(F("\nWiFi connected!"));
+    Serial.print(F("IP address: "));
     Serial.println(WiFi.localIP());
-    Serial.print("Signal strength: ");
+    Serial.print(F("Signal strength: "));
     Serial.print(WiFi.RSSI());
-    Serial.println(" dBm");
+    Serial.println(F(" dBm"));
   }
   
   local_IP = WiFi.localIP();
   
-  Serial.printf("\nNetwork Configuration:\n");
-  Serial.printf("  Subnet base: %s\n", subnetBase.c_str());
-  Serial.printf("  Scan range: %s%d to %s%d\n", subnetBase.c_str(), startOctet, subnetBase.c_str(), endOctet);
-  Serial.printf("  Total IPs to scan: %d\n", endOctet - startOctet + 1);
-  Serial.printf("  Parallel scans: %d\n", MAX_PARALLEL_SCANS);
+  Serial.println(F("\nNetwork Configuration:"));
+  Serial.print(F("  Subnet base: "));
+  Serial.println(subnetBase);
+  Serial.print(F("  Scan range: "));
+  Serial.print(subnetBase);
+  Serial.print(startOctet);
+  Serial.print(F(" to "));
+  Serial.print(subnetBase);
+  Serial.println(endOctet);
+  Serial.print(F("  Total IPs to scan: "));
+  Serial.println(endOctet - startOctet + 1);
+  Serial.print(F("  Parallel scans: "));
+  Serial.println(maxParallelScans);
+  Serial.print(F("  Scan timeout: "));
+  Serial.print(scanTimeoutMs);
+  Serial.println(F("ms"));
   
   server.on("/", HTTP_GET, handleRoot);
   ws.onEvent(onWsEvent);
   server.addHandler(&ws);
   server.begin();
   
-  Serial.println("HTTP server started");
-  Serial.println("Open browser: http://" + WiFi.localIP().toString());
-  Serial.println("======================================\n");
+  Serial.println(F("HTTP server started"));
+  Serial.print(F("Open browser: http://"));
+  Serial.println(WiFi.localIP().toString());
+  Serial.println(F("======================================\n"));
   
   esp_task_wdt_reset();
 }
