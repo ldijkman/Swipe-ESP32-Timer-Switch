@@ -11,6 +11,8 @@ Swipe-ESP32-Timer-Switch/docs/burn
 
 https://ldijkman.github.io/Swipe-ESP32-Timer-Switch/burn/flash.html
 
+https://www.youtube.com/watch?v=YH7AbhQ37dY
+
 
 ---
 
