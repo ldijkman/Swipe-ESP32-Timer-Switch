@@ -13,11 +13,6 @@ https://ldijkman.github.io/Swipe-ESP32-Timer-Switch/burn/flash.html
 
 https://www.youtube.com/watch?v=YH7AbhQ37dY
 
-
-# My Awesome Project
-
-Here is a demo video of the project in action:
-
 <iframe width="939" height="704" src="https://www.youtube.com/embed/YH7AbhQ37dY" title="ESP32 Tasmota scanner controller install and configure from browser" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 <div align="center">
