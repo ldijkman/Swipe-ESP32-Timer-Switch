@@ -146,4 +146,6 @@ https://ifconfig.me/ip returns internet ip
 
 https://www.duckdns.org/
 
+https://www.athom.tech/tasmota
+
 
