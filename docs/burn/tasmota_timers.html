@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tasmota Timer Control</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .device-info {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .status.connected {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status.disconnected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .timer-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .timer-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .timer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .timer-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .timer-toggle {
+            position: relative;
+            width: 50px;
+            height: 26px;
+        }
+
+        .timer-toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #667eea;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(24px);
+        }
+
+        .timer-field {
+            margin-bottom: 12px;
+        }
+
+        .timer-field label {
+            display: block;
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .timer-field input,
+        .timer-field select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .timer-field input:focus,
+        .timer-field select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .time-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn-block {
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .actions {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: white;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .error.show {
+            display: block;
+        }
+
+        .days-selector {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .day-btn {
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .day-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Tasmota Timer Control</h1>
+            <div class="device-info" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <label for="deviceIP" style="font-weight: 600;">Device IP:</label>
+                    <input type="text" id="deviceIP" value="10.10.100.118" 
+                           style="padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-family: monospace; width: 150px;"
+                           onkeypress="if(event.key === 'Enter') updateDeviceIP()">
+                    <button class="btn btn-primary" onclick="updateDeviceIP()" style="padding: 6px 15px;">Connect</button>
+                </div>
+                <span class="status disconnected" id="status">Disconnected</span>
+            </div>
+            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e0e0e0; display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <strong style="color: #333;">Global Timer Control:</strong>
+                    <span id="timersStatus" style="margin-left: 10px; color: #666;">Loading...</span>
+                </div>
+                <label class="timer-toggle">
+                    <input type="checkbox" id="globalTimersToggle" onchange="toggleGlobalTimers(this.checked)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <div class="error" id="error"></div>
+        <div class="loading" id="loading">Loading timers...</div>
+
+        <div class="timer-grid" id="timerGrid"></div>
+
+        <div class="actions">
+            <h3 style="margin-bottom: 15px; color: #333;">Actions</h3>
+            <div class="action-buttons">
+                <button class="btn btn-primary" onclick="loadTimers()">Refresh Timers</button>
+                <button class="btn btn-success" onclick="saveAllTimers()">Save All Timers</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let DEVICE_IP = '10.10.100.118';
+        const timers = [];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            // Load saved IP from localStorage if available
+            const savedIP = localStorage.getItem('tasmotaDeviceIP');
+            if (savedIP) {
+                DEVICE_IP = savedIP;
+                document.getElementById('deviceIP').value = savedIP;
+            }
+            loadTimers();
+        });
+
+        function updateDeviceIP() {
+            const newIP = document.getElementById('deviceIP').value.trim();
+            if (!newIP) {
+                showError('Please enter a valid IP address');
+                return;
+            }
+            DEVICE_IP = newIP;
+            localStorage.setItem('tasmotaDeviceIP', newIP);
+            showSuccess(`Device IP updated to ${newIP}`);
+            loadTimers();
+        }
+
+        async function sendCommand(command) {
+            try {
+                const response = await fetch(`http://${DEVICE_IP}/cm?cmnd=${encodeURIComponent(command)}`);
+                return await response.json();
+            } catch (error) {
+                console.error('Command error:', error);
+                throw error;
+            }
+        }
+
+        async function loadTimers() {
+            const loading = document.getElementById('loading');
+            const error = document.getElementById('error');
+            const status = document.getElementById('status');
+            const timersStatus = document.getElementById('timersStatus');
+            const globalToggle = document.getElementById('globalTimersToggle');
+            
+            loading.classList.add('show');
+            error.classList.remove('show');
+
+            try {
+                // Get all timers (Tasmota supports up to 16 timers)
+                const result = await sendCommand('Timers');
+                
+                status.textContent = 'Connected';
+                status.className = 'status connected';
+                
+                if (result.Timers) {
+                    // Update global timers status
+                    const timersEnabled = result.Timers === 'ON';
+                    globalToggle.checked = timersEnabled;
+                    timersStatus.textContent = result.Timers;
+                    timersStatus.style.color = timersEnabled ? '#155724' : '#721c24';
+                    timersStatus.style.fontWeight = '600';
+                    
+                    renderTimers(result);
+                }
+            } catch (err) {
+                status.textContent = 'Disconnected';
+                status.className = 'status disconnected';
+                timersStatus.textContent = 'Unknown';
+                showError('Failed to connect to device. Please check the IP address and network connection.');
+            } finally {
+                loading.classList.remove('show');
+            }
+        }
+
+        function renderTimers(timersData) {
+            const grid = document.getElementById('timerGrid');
+            grid.innerHTML = '';
+
+            // Tasmota returns timers as Timer1, Timer2, etc.
+            for (let i = 1; i <= 16; i++) {
+                const timerKey = `Timer${i}`;
+                const timer = timersData[timerKey] || {};
+                
+                const card = createTimerCard(i, timer);
+                grid.appendChild(card);
+            }
+        }
+
+        function createTimerCard(index, timer) {
+            const card = document.createElement('div');
+            card.className = 'timer-card';
+            
+            const enable = timer.Enable || 0;
+            const mode = timer.Mode || 0;
+            const time = timer.Time || '00:00';
+            const window = timer.Window || 0;
+            const days = timer.Days || '0000000';
+            const repeat = timer.Repeat || 0;
+            const output = timer.Output || 1;
+            const action = timer.Action || 0;
+
+            card.innerHTML = `
+                <div class="timer-header">
+                    <div class="timer-title">Timer ${index}</div>
+                    <label class="timer-toggle">
+                        <input type="checkbox" ${enable ? 'checked' : ''} onchange="toggleTimer(${index}, this.checked)">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="timer-field">
+                    <label>Time</label>
+                    <input type="time" value="${time}" id="time${index}">
+                </div>
+
+                <div class="timer-field">
+                    <label>Action</label>
+                    <select id="action${index}">
+                        <option value="0" ${action == 0 ? 'selected' : ''}>Off</option>
+                        <option value="1" ${action == 1 ? 'selected' : ''}>On</option>
+                        <option value="2" ${action == 2 ? 'selected' : ''}>Toggle</option>
+                        <option value="3" ${action == 3 ? 'selected' : ''}>Rule</option>
+                    </select>
+                </div>
+
+                <div class="timer-field">
+                    <label>Output</label>
+                    <select id="output${index}">
+                        <option value="1" ${output == 1 ? 'selected' : ''}>Output 1</option>
+                        <option value="2" ${output == 2 ? 'selected' : ''}>Output 2</option>
+                        <option value="3" ${output == 3 ? 'selected' : ''}>Output 3</option>
+                        <option value="4" ${output == 4 ? 'selected' : ''}>Output 4</option>
+                    </select>
+                </div>
+
+                <div class="timer-field">
+                    <label>Days (click to toggle)</label>
+                    <div class="days-selector" id="days${index}">
+                        ${renderDayButtons(index, days)}
+                    </div>
+                </div>
+
+                <div class="timer-field">
+                    <label>
+                        <input type="checkbox" ${repeat ? 'checked' : ''} id="repeat${index}">
+                        Repeat
+                    </label>
+                </div>
+
+                <button class="btn btn-primary btn-block" onclick="saveTimer(${index})">
+                    Save Timer ${index}
+                </button>
+            `;
+
+            return card;
+        }
+
+        function renderDayButtons(timerIndex, days) {
+            const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            let html = '';
+            
+            for (let i = 0; i < 7; i++) {
+                const active = days[i] === '1';
+                html += `<button class="day-btn ${active ? 'active' : ''}" 
+                         onclick="toggleDay(${timerIndex}, ${i})" 
+                         data-day="${i}">${dayNames[i]}</button>`;
+            }
+            
+            return html;
+        }
+
+        function toggleDay(timerIndex, dayIndex) {
+            const container = document.getElementById(`days${timerIndex}`);
+            const buttons = container.querySelectorAll('.day-btn');
+            buttons[dayIndex].classList.toggle('active');
+        }
+
+        async function toggleGlobalTimers(enabled) {
+            try {
+                await sendCommand(`Timers ${enabled ? 'ON' : 'OFF'}`);
+                const timersStatus = document.getElementById('timersStatus');
+                timersStatus.textContent = enabled ? 'ON' : 'OFF';
+                timersStatus.style.color = enabled ? '#155724' : '#721c24';
+                showSuccess(`Global timers ${enabled ? 'enabled' : 'disabled'}`);
+            } catch (err) {
+                showError('Failed to toggle global timers');
+                // Revert the toggle on error
+                document.getElementById('globalTimersToggle').checked = !enabled;
+            }
+        }
+
+        function getDaysString(timerIndex) {
+            const container = document.getElementById(`days${timerIndex}`);
+            const buttons = container.querySelectorAll('.day-btn');
+            let days = '';
+            
+            buttons.forEach(btn => {
+                days += btn.classList.contains('active') ? '1' : '0';
+            });
+            
+            return days;
+        }
+
+        async function toggleTimer(index, enabled) {
+            try {
+                await sendCommand(`Timer${index} ${enabled ? 1 : 0}`);
+            } catch (err) {
+                showError(`Failed to toggle timer ${index}`);
+            }
+        }
+
+        async function saveTimer(index) {
+            const time = document.getElementById(`time${index}`).value;
+            const action = document.getElementById(`action${index}`).value;
+            const output = document.getElementById(`output${index}`).value;
+            const repeat = document.getElementById(`repeat${index}`).checked ? 1 : 0;
+            const days = getDaysString(index);
+            
+            // Get the enable state from the toggle
+            const enableToggle = document.querySelector(`#timerGrid .timer-card:nth-child(${index}) .timer-toggle input`);
+            const enable = enableToggle && enableToggle.checked ? 1 : 0;
+
+            // Build timer command
+            // Format: {"Enable":1,"Mode":0,"Time":"07:00","Window":0,"Days":"1111100","Repeat":1,"Output":1,"Action":1}
+            const timerConfig = {
+                Enable: enable,
+                Mode: 0,
+                Time: time,
+                Window: 0,
+                Days: days,
+                Repeat: repeat,
+                Output: parseInt(output),
+                Action: parseInt(action)
+            };
+
+            try {
+                await sendCommand(`Timer${index} ${JSON.stringify(timerConfig)}`);
+                showSuccess(`Timer ${index} saved successfully!`);
+            } catch (err) {
+                showError(`Failed to save timer ${index}`);
+            }
+        }
+
+        async function saveAllTimers() {
+            for (let i = 1; i <= 16; i++) {
+                await saveTimer(i);
+                await new Promise(resolve => setTimeout(resolve, 100)); // Small delay between saves
+            }
+        }
+
+        function showError(message) {
+            const error = document.getElementById('error');
+            error.textContent = message;
+            error.classList.add('show');
+            setTimeout(() => error.classList.remove('show'), 5000);
+        }
+
+        function showSuccess(message) {
+            const error = document.getElementById('error');
+            error.style.background = '#d4edda';
+            error.style.color = '#155724';
+            error.textContent = message;
+            error.classList.add('show');
+            setTimeout(() => {
+                error.classList.remove('show');
+                error.style.background = '';
+                error.style.color = '';
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
