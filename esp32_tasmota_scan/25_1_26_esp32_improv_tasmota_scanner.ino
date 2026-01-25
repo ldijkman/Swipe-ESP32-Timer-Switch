@@ -25,8 +25,8 @@ String auth_password = "admin";
 bool auth_enabled = true;
 
 // WiFi credentials (fallback if Improv not configured)
-const char* default_ssid = "Bangert_30_Andijk";
-const char* default_password = "ookikwilerin";
+const char* default_ssid = "";
+const char* default_password = "";
 
 // Network configuration
 IPAddress local_IP;
