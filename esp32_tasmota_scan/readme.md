@@ -134,6 +134,9 @@ https://github.com/ldijkman/Swipe-ESP32-Timer-Switch/blob/main/esp32_tasmota_sca
 
 personal 
 
+http://10.10.100.118/cm?cmnd=status
+- {"Status":{"Module":0,"DeviceName":"Grond","FriendlyName":["Kamer"],"Topic":"tasmota_640D80","ButtonTopic":"0","Power":"0","PowerLock":"0","PowerOnState":3,"LedState":1,"LedMask":"FFFF","SaveData":1,"SaveState":1,"SwitchTopic":"0","SwitchMode":[4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"ButtonRetain":0,"SwitchRetain":0,"SensorRetain":0,"PowerRetain":0,"InfoRetain":0,"StateRetain":0,"StatusRetain":0}}
+
 http://10.10.100.118/cm?cmnd=status%207
 - {"StatusTIM":{"UTC":"2026-01-25T10:59:06Z","Local":"2026-01-25T11:59:06","StartDST":"2026-03-29T02:00:00","EndDST":"2026-10-25T03:00:00","Timezone":"+01:00","Sunrise":"08:29","Sunset":"17:35"}}  
 
