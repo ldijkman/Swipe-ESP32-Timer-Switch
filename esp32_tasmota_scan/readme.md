@@ -149,3 +149,6 @@ https://www.duckdns.org/
 https://www.athom.tech/tasmota
 
 
+<img width="673" height="633" alt="athom_iotorero_tasmota_eu-plug" src="https://github.com/user-attachments/assets/2908ee3f-1190-4612-9f20-05b0cd0e01f7" />
+
+
