@@ -340,6 +340,21 @@
     <p>Once installed, you can:</p>
     <ul>
       <li><strong>Configure Wi-Fi:</strong> Visit <a href="https://www.improv-wifi.com/" target="_blank">improv-wifi.com</a> to set up your network</li>
+      
+   <script type="module" src="https://www.improv-wifi.com/sdk-serial-js/serial-launch-button.js"></script>
+ 
+  </improv-wifi-launch-button>
+  <h3>Improv via Serial to configure wifi if needed</h3>
+  <improv-wifi-serial-launch-button>
+    <span slot="unsupported">
+      Your browser is not supported. To try it out, visit this page with Google
+      Chrome or Microsoft Edge<span class="not-supported-i hidden">
+        (but not on your iOS device)</span
+      >.
+    </span>
+  </improv-wifi-serial-launch-button>
+
+ 
       <li><strong>Access Settings:</strong> Click the "Settings" button to configure scan parameters</li>
       <li><strong>Scan Network:</strong> Click "Scan Network" to discover Tasmota devices</li>
       <li><strong>Control Devices:</strong> Toggle individual devices or use "All ON/OFF" buttons</li>
