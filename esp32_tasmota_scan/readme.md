@@ -134,7 +134,7 @@ https://github.com/ldijkman/Swipe-ESP32-Timer-Switch/blob/main/esp32_tasmota_sca
 
 personal 
 
-http://10.10.100.118/cm?cmnd=status 7
+http://10.10.100.118/cm?cmnd=status%207
 - {"StatusTIM":{"UTC":"2026-01-25T10:59:06Z","Local":"2026-01-25T11:59:06","StartDST":"2026-03-29T02:00:00","EndDST":"2026-10-25T03:00:00","Timezone":"+01:00","Sunrise":"08:29","Sunset":"17:35"}}  
 
 
