@@ -144,4 +144,6 @@ http://10.10.100.118/cm?cmnd=status%207
 
 https://ifconfig.me/ip returns internet ip
 
+https://www.duckdns.org/
+
 
