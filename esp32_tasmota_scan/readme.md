@@ -155,9 +155,9 @@ https://www.athom.tech/tasmota
 ---
 
 added a footer to the webpage, loaded from github (if possible)
-
+```
 function loadExternalFooter(){fetch('https://ldijkman.github.io/Swipe-ESP32-Timer-Switch/burn/footer.html').then(response=>response.text()).then(html=>{document.getElementById('footerContent').innerHTML=html}).catch(err=>{console.log('Could not load external footer, using default')});}loadExternalFooter()
-
+```
 maybe handy for notify when something new 
 
 only on esp32 wroom wrover version for now
