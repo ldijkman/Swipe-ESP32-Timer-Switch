@@ -152,3 +152,10 @@ https://www.athom.tech/tasmota
 <img width="673" height="633" alt="athom_iotorero_tasmota_eu-plug" src="https://github.com/user-attachments/assets/2908ee3f-1190-4612-9f20-05b0cd0e01f7" />
 
 
+---
+
+added a footer to the webpage, loaded from github (if possible)
+
+maybe handy for notify when something new 
+
+only on esp32 wroom wrover version for now
