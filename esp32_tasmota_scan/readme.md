@@ -154,7 +154,7 @@ https://www.athom.tech/tasmota
 
 ---
 
-added a footer to the webpage, loaded from github (if possible)
+added a footer to the webpage, loaded from github (if possible) https://ldijkman.github.io/Swipe-ESP32-Timer-Switch/burn/footer.html
 ```
 function loadExternalFooter(){fetch('https://ldijkman.github.io/Swipe-ESP32-Timer-Switch/burn/footer.html').then(response=>response.text()).then(html=>{document.getElementById('footerContent').innerHTML=html}).catch(err=>{console.log('Could not load external footer, using default')});}loadExternalFooter()
 ```
