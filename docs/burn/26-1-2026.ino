@@ -325,6 +325,13 @@ void handleRoot(AsyncWebServerRequest *request) {
   // JavaScript
   response->print("<script>");
   response->print("var ws,wsConnected=false,editingIP='',editButtonsVisible=true;");
+  response->print("function loadEditButtonState(){var saved=localStorage.getItem('editButtonsVisible');");
+  response->print("if(saved!==null){editButtonsVisible=saved==='true';updateEditButtonsDisplay()}}");
+  response->print("function saveEditButtonState(){localStorage.setItem('editButtonsVisible',editButtonsVisible)}");
+  response->print("function updateEditButtonsDisplay(){var editBtns=document.querySelectorAll('.edit-btn');");
+  response->print("for(var i=0;i<editBtns.length;i++){");
+  response->print("if(editButtonsVisible){editBtns[i].classList.remove('hidden')}");
+  response->print("else{editBtns[i].classList.add('hidden')}}}");
   response->print("function vibrate(d){d=d||100;if(navigator.vibrate)navigator.vibrate(d)}");
   
   // Load external footer
@@ -403,10 +410,7 @@ void handleRoot(AsyncWebServerRequest *request) {
   response->print("document.body.style.overflow='hidden'})}");
   
   response->print("function toggleEditButtons(){vibrate(100);editButtonsVisible=!editButtonsVisible;");
-  response->print("var editBtns=document.querySelectorAll('.edit-btn');");
-  response->print("for(var i=0;i<editBtns.length;i++){");
-  response->print("if(editButtonsVisible){editBtns[i].classList.remove('hidden')}");
-  response->print("else{editBtns[i].classList.add('hidden')}}}");
+  response->print("saveEditButtonState();updateEditButtonsDisplay()}");
   
   response->print("function scan(){vibrate(100);if(!wsConnected){alert('Not connected!');return}");
   response->print("ws.send(JSON.stringify({action:'scan'}));document.getElementById('scanBtn').disabled=true}");
@@ -454,6 +458,7 @@ void handleRoot(AsyncWebServerRequest *request) {
   response->print("ws.send(JSON.stringify({action:'rename',ip:ip,friendlyname:fn,devicename:dn}));");
   response->print("closeEditModal();setTimeout(function(){ws.send(JSON.stringify({action:'refresh'}))},1000)}");
   
+  response->print("loadEditButtonState();");
   response->print("connectWebSocket();");
   response->print("document.getElementById('scanBtn').addEventListener('click',scan);");
   response->print("document.getElementById('allOnBtn').addEventListener('click',allOn);");
