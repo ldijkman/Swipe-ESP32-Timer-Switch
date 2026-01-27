@@ -161,3 +161,7 @@ function loadExternalFooter(){fetch('https://ldijkman.github.io/Swipe-ESP32-Time
 maybe handy for notify when something new 
 
 only on esp32 wroom wrover version for now
+
+---
+
+not made for home assistant configurators
