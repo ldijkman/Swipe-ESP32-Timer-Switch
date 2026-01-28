@@ -164,4 +164,17 @@ only on esp32 wroom wrover version for now
 
 ---
 
+28 1 26 esp32 wroom wrover version
+
+added download button timer.html ace.html
+
+ace editor mobile friendly
+
+timer demo not connected yet
+
+download from github to littlefs
+
+
+---
+
 not made for home assistant configurators
