@@ -170,9 +170,9 @@ added download button timer.html ace.html
 
 ace editor mobile friendly
 
-timer demo not connected yet
+swipe visual timeslots circle timer demo not connected yet
 
-download from github to littlefs
+download files from github to littlefs
 
 
 ---
