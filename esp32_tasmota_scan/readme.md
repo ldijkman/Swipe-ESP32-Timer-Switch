@@ -177,4 +177,89 @@ download files from github to littlefs
 
 ---
 
+after scan write devices.json to littlefs
+
+maybe for timer.html
+
+'''
+{
+  "devices": [
+    {
+      "ip": "10.10.100.112",
+      "devicename": "Kamer Grote Hanglamp",
+      "friendlyname": "Kamer",
+      "module": "ESP32C3"
+    },
+    {
+      "ip": "10.10.100.104",
+      "devicename": "Keuken Raam",
+      "friendlyname": "Keuken",
+      "module": "Sonoff Basic"
+    },
+    {
+      "ip": "10.10.100.124",
+      "devicename": "Keuken WCD",
+      "friendlyname": "Keuken WCD",
+      "module": "Athom Plug V2"
+    },
+    {
+      "ip": "10.10.100.108",
+      "devicename": "LED",
+      "friendlyname": "Keuken",
+      "module": "ESP32C3"
+    },
+    {
+      "ip": "10.10.100.125",
+      "devicename": "WCD",
+      "friendlyname": "Televisie",
+      "module": "Athom Plug V3"
+    },
+    {
+      "ip": "10.10.100.109",
+      "devicename": "kamer",
+      "friendlyname": "grond",
+      "module": "Sonoff Basic"
+    },
+    {
+      "ip": "10.10.100.114",
+      "devicename": "Plafon LED",
+      "friendlyname": "VoorKamer",
+      "module": "Sonoff Basic"
+    },
+    {
+      "ip": "10.10.100.122",
+      "devicename": "WCD LED oost",
+      "friendlyname": "VoorKamer",
+      "module": "Athom Plug V3"
+    },
+    {
+      "ip": "10.10.100.118",
+      "devicename": "Grond",
+      "friendlyname": "Kamer",
+      "module": "Sonoff Basic R4"
+    },
+    {
+      "ip": "10.10.100.123",
+      "devicename": "WCD LED west",
+      "friendlyname": "VoorKamer",
+      "module": "Athom Plug V2"
+    },
+    {
+      "ip": "10.10.100.111",
+      "devicename": "Kamer Raam",
+      "friendlyname": "Kamer",
+      "module": "Sonoff Basic"
+    }
+  ],
+  "total": 11,
+  "timestamp": 7572695
+}
+
+'''
+
+
+
+
+---
+
 not made for home assistant configurators
