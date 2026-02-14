@@ -20,3 +20,8 @@ password on control web page
 ---
 
 every change a lot of challenges
+
+
+---
+
+timer.html should read/write timer settings to littlefs
