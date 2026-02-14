@@ -10,7 +10,7 @@ esp32 reads on reboot devices.json for list to use on webpage served
 
 timer.html reads devices.json (but not all functional)
 
-ace.html for easy edit view upload (ace now shows devices.json as pretty print, not single line)
+ace.html for easy edit view upload (ace now shows .json as pretty print, not single line)
 
 
 ---
