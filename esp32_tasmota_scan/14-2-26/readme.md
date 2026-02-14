@@ -32,6 +32,7 @@ timer.html  read/write timer settings.json to littlefs
 
 esp32 should read timersettings.json and act on times set, not control from timer html
 
+getting suntimes rise set does not work from http
 
 ---
 
