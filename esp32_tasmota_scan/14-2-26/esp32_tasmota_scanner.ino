@@ -408,8 +408,8 @@ void handleRoot(AsyncWebServerRequest *request) {
   response->print("<div class='devices-grid' id='devices'></div>");
   
   response->print("<div class='file-links'>");
-  response->print("<a href='/timer.html' class='file-link' target='_blank'>Timer</a>");
-  response->print("<a href='/ace.html' class='file-link' target='_blank'>Ace</a>");
+  response->print("<a href='/timer.html' class='file-link' target='Timer'>Timer</a>");
+  response->print("<a href='/ace.html' class='file-link' target='Ace'>Ace</a>");
   response->print("</div>");
   
   response->print("<div class='footer' id='footerContent'>");
