@@ -9,6 +9,7 @@ write discovered to devices.json on litlefs
 esp32 reads on reboot devices.json for list to use on webpage served
 
 timer.html reads devices.json for timers and writes to timersettings.json on littlefs for timer settings for each device
+
 ace.html for easy edit view upload (ace now shows .json as pretty print, not single line)
 
 
