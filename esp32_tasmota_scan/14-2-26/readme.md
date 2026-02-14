@@ -1,4 +1,4 @@
-experimental Ai play, i use Claude.Ai
+experimental hobbyist DIY Ai play, i use Claude.Ai
 ---
 
 
