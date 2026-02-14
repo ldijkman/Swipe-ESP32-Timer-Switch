@@ -52,3 +52,5 @@ timers json saved to littlefs
 
 <img width="1024" height="768" alt="Screenshot from 2026-02-14 11-48-25" src="https://github.com/user-attachments/assets/f82a163f-ef0a-476a-ab84-9b885d00be86" />
 
+<img width="1024" height="768" alt="Screenshot from 2026-02-14 11-52-00" src="https://github.com/user-attachments/assets/9ea81aff-0e28-4c1a-9091-5066925da1f1" />
+
