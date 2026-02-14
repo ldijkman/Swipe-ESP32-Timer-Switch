@@ -7,6 +7,13 @@ timer.html reads devices.json (but not all functional)
 ace.html for easy edit view upload
 
 
+---
+
+only forward esp32 ip to internet to controll all tasmota devices on local wifi
+
+password on control web page
+
+
 
 ---
 
