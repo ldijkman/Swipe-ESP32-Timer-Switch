@@ -15,6 +15,9 @@ h1 { font-size: 18px; margin: 0 0 5px; text-align: center; }
 .device-status.loading { color: #fbbf24; }
 .device-status.success { color: #10b981; }
 .device-status.error { color: #ef4444; }
+.storage-status { text-align: center; padding: 8px; margin-bottom: 10px; background: #1f2937; border-radius: 6px; font-size: 12px; }
+.storage-status.connected { color: #10b981; }
+.storage-status.offline { color: #ef4444; }
 .timer-tabs-container { margin-bottom: 15px; background: #1f2937; border-radius: 8px; padding: 10px; }
 .timer-tabs-scroll { display: flex; overflow-x: auto; gap: 6px; padding: 4px 0; scrollbar-width: none; margin-bottom: 10px; }
 .timer-tabs-scroll::-webkit-scrollbar { display: none; }
@@ -218,6 +221,8 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="deviceLoadStatus" class="device-status loading">
   <span id="loadingMessage">Loading devices...</span>
 </div>
+
+<div id="storageStatus" class="storage-status">💾 ESP32 Storage: Checking...</div>
 
 <div class="timer-tabs-container">
   <div class="timer-tabs-scroll" id="timerTabs"></div>
@@ -476,8 +481,6 @@ const CANVAS_HEIGHT = 300;
 const RADIUS = CANVAS_WIDTH / 2 - 25;
 const CENTER_X = CANVAS_WIDTH / 2;
 const CENTER_Y = CANVAS_HEIGHT / 2;
-const STORAGE_KEY = "dagcirkel_multitimer_v2_fixed";
-const ACTIVE_TIMER_KEY = "dagcirkel_active_timer_v2";
 const dayLetters = ["M", "T", "W", "T", "F", "S", "S"];
 const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 let timers = [];
@@ -515,13 +518,242 @@ const TimeUtils = {toMin(t){const [h,m]=t.split(":").map(Number);return h*60+m;}
 function jsDayToSlotIndex(jsDay){return jsDay===0?6:jsDay-1;}
 function slotIndexToName(idx){return dayNames[idx];}
 
+// ============================================
+// LITTLEFS STORAGE MANAGER - NO LOCALSTORAGE
+// ============================================
+const LittleFSStorage = {
+  apiUrl: '/api/timer/settings',
+  
+  async load() {
+    try {
+      const response = await fetch(this.apiUrl);
+      if (!response.ok) {
+        throw new Error('HTTP ' + response.status);
+      }
+      const data = await response.json();
+      console.log('✓ Settings loaded from ESP32 LittleFS');
+      updateStorageStatus(true);
+      return data;
+    } catch (error) {
+      console.error('✗ Error loading from LittleFS:', error);
+      updateStorageStatus(false);
+      return null;
+    }
+  },
+  
+  async save(data) {
+    try {
+      const response = await fetch(this.apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+      });
+      
+      if (!response.ok) {
+        throw new Error('HTTP ' + response.status);
+      }
+      
+      console.log('✓ Settings saved to ESP32 LittleFS');
+      updateStorageStatus(true);
+      return true;
+    } catch (error) {
+      console.error('✗ Error saving to LittleFS:', error);
+      updateStorageStatus(false);
+      return false;
+    }
+  }
+};
+
+function updateStorageStatus(connected) {
+  const statusEl = document.getElementById('storageStatus');
+  if (connected) {
+    statusEl.textContent = '💾 ESP32 Storage: Connected';
+    statusEl.className = 'storage-status connected';
+  } else {
+    statusEl.textContent = '❌ ESP32 Storage: Offline';
+    statusEl.className = 'storage-status offline';
+  }
+}
+
 const DeviceManager={devicesUrl:'./devices.json',devices:[],async loadDevices(){const statusEl=document.getElementById('deviceLoadStatus');const msgEl=document.getElementById('loadingMessage');try{msgEl.textContent='Loading devices from devices.json...';statusEl.className='device-status loading';const response=await fetch(this.devicesUrl);if(!response.ok){throw new Error('HTTP '+response.status+': '+response.statusText);}const data=await response.json();this.devices=data.devices||[];msgEl.textContent='✓ Loaded '+this.devices.length+' devices successfully';statusEl.className='device-status success';console.log('Devices loaded:',this.devices);setTimeout(()=>{statusEl.style.display='none';},3000);return this.devices;}catch(error){console.error('Error loading devices:',error);msgEl.textContent='✗ Could not load devices.json: '+error.message;statusEl.className='device-status error';setTimeout(()=>{statusEl.style.display='none';},5000);return [];}},createTimersFromDevices(){if(this.devices.length===0){console.log('No devices loaded, using default timer');return this.createDefaultTimer();}timers=this.devices.map((device,index)=>{let onCommand,offCommand;if(device.module.includes('Athom')||device.module.includes('Sonoff')){onCommand='/cm?cmnd=Power%20ON';offCommand='/cm?cmnd=Power%20OFF';}else if(device.module.includes('ESP32')){onCommand='/on';offCommand='/off';}else{onCommand='/on';offCommand='/off';}return{id:'device-'+device.ip.replace(/\./g,'-'),name:device.friendlyname||device.devicename,deviceInfo:{ip:device.ip,devicename:device.devicename,friendlyname:device.friendlyname,module:device.module},onUrl:'http://'+device.ip+onCommand,offUrl:'http://'+device.ip+offCommand,slots:[],manualMode:false,manualEndTime:null};});console.log('Created '+timers.length+' timers from devices');activeTimerId=timers[0].id;},createDefaultTimer(){timers=[{id:'timer-'+Date.now(),name:'Manual Timer',onUrl:'',offUrl:'',slots:[],manualMode:false,manualEndTime:null}];activeTimerId=timers[0].id;},getDeviceByIp(ip){return this.devices.find(d=>d.ip===ip);}};
 
 const Logger={maxEntries:100,addEntry(timerName,action,url,success=true,error=null,isManual=false){const logWindow=document.getElementById('logWindow');const now=new Date();const timestamp=now.toLocaleString('en-US',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});const entry=document.createElement('div');entry.className='log-entry'+(isManual?' manual':'');const actionClass=action==='ON'?'on':'off';const statusClass=success?'success':'error';const statusText=success?'✓ Success':'✗ Error: '+(error||'Unknown error');const timerClass=isManual?'manual':'';const source=isManual?' [MANUAL]':'';entry.innerHTML='<div><span class="log-timestamp">'+timestamp+'</span> | <span class="log-timer '+timerClass+'">'+timerName+source+'</span> | <span class="log-action '+actionClass+'">'+action+'</span></div><div class="log-url">'+url+'</div><div class="log-status '+statusClass+'">'+statusText+'</div>';const emptyMsg=logWindow.querySelector('.log-empty');if(emptyMsg){emptyMsg.remove();}logWindow.insertBefore(entry,logWindow.firstChild);const entries=logWindow.querySelectorAll('.log-entry');if(entries.length>this.maxEntries){entries[entries.length-1].remove();}this.saveToStorage();},clear(){const logWindow=document.getElementById('logWindow');logWindow.innerHTML='<div class="log-empty">No URL calls logged yet</div>';localStorage.removeItem('urlCallLog');},saveToStorage(){const logWindow=document.getElementById('logWindow');const entries=Array.from(logWindow.querySelectorAll('.log-entry')).map(entry=>entry.outerHTML);localStorage.setItem('urlCallLog',JSON.stringify(entries));},loadFromStorage(){const stored=localStorage.getItem('urlCallLog');const logWindow=document.getElementById('logWindow');if(stored){try{const entries=JSON.parse(stored);if(entries.length>0){logWindow.innerHTML=entries.join('');}else{logWindow.innerHTML='<div class="log-empty">No URL calls logged yet</div>';}}catch(e){logWindow.innerHTML='<div class="log-empty">No URL calls logged yet</div>';}}else{logWindow.innerHTML='<div class="log-empty">No URL calls logged yet</div>';}}};
 
 const URLController={async callUrl(url,type,timerName=null,isManual=false){if(!url||url.trim()==='')return;if(!timerName){const timer=timers.find(t=>t.id===activeTimerId);timerName=timer?timer.name:'Unknown Timer';}try{console.log('Calling '+type+' URL:',url);const response=await fetch(url,{method:'GET',mode:'no-cors',cache:'no-cache'});console.log(type+' URL called successfully');Logger.addEntry(timerName,type,url,true,null,isManual);}catch(error){console.error('Error calling '+type+' URL:',error);Logger.addEntry(timerName,type,url,false,error.message,isManual);}},async testOnUrl(url){const statusEl=document.getElementById('urlTestStatus');statusEl.style.display='block';if(!url||url.trim()===''){statusEl.className='url-status error';statusEl.textContent='⚠️ ON URL is empty';return;}statusEl.className='url-status';statusEl.textContent='🔄 Testing ON URL...';try{await fetch(url,{method:'GET',mode:'no-cors',cache:'no-cache'});statusEl.className='url-status';statusEl.textContent='✓ ON URL called successfully';console.log('ON URL test:',url);}catch(error){statusEl.className='url-status error';statusEl.textContent='✗ ON URL failed: '+error.message;console.error('ON URL test failed:',error);}},async testOffUrl(url){const statusEl=document.getElementById('urlTestStatus');statusEl.style.display='block';if(!url||url.trim()===''){statusEl.className='url-status error';statusEl.textContent='⚠️ OFF URL is empty';return;}statusEl.className='url-status';statusEl.textContent='🔄 Testing OFF URL...';try{await fetch(url,{method:'GET',mode:'no-cors',cache:'no-cache'});statusEl.className='url-status';statusEl.textContent='✓ OFF URL called successfully';console.log('OFF URL test:',url);}catch(error){statusEl.className='url-status error';statusEl.textContent='✗ OFF URL failed: '+error.message;console.error('OFF URL test failed:',error);}},checkSlotStateChanges(){timers.forEach(timer=>{if(!timer)return;if(!timerSlotStates.has(timer.id)){timerSlotStates.set(timer.id,new Map());}const lastSlotStates=timerSlotStates.get(timer.id);const now=new Date();const todayJs=now.getDay();const nowMin=now.getHours()*60+now.getMinutes();if(timer.manualMode){const wasManual=lastSlotStates.get('manual');if(!wasManual){console.log('['+timer.name+'] Manual mode activated - calling ON URL');if(timer.onUrl)this.callUrl(timer.onUrl,'ON',timer.name);lastSlotStates.set('manual',true);}return;}else{if(lastSlotStates.get('manual')){console.log('['+timer.name+'] Manual mode deactivated - calling OFF URL');if(timer.offUrl)this.callUrl(timer.offUrl,'OFF',timer.name);lastSlotStates.delete('manual');}}let anySlotActive=false;const timerSlots=timer.slots||[];timerSlots.forEach(slot=>{if(!slot.enabled||!isSlotActiveOnDay(slot,todayJs)){lastSlotStates.delete(slot.id);return;}const isActive=TimeUtils.isInSlot(nowMin,slot);const wasActive=lastSlotStates.get(slot.id);if(isActive&&!wasActive){console.log('['+timer.name+'] Slot '+slot.id+' activated ('+slot.start+'-'+slot.end+') - calling ON URL');if(timer.onUrl)this.callUrl(timer.onUrl,'ON',timer.name);lastSlotStates.set(slot.id,true);}else if(!isActive&&wasActive){console.log('['+timer.name+'] Slot '+slot.id+' deactivated ('+slot.start+'-'+slot.end+') - calling OFF URL');if(timer.offUrl)this.callUrl(timer.offUrl,'OFF',timer.name);lastSlotStates.delete(slot.id);}if(isActive)anySlotActive=true;});const wasAnyActive=lastSlotStates.get('anyActive');if(!anySlotActive&&wasAnyActive&&!timer.manualMode){console.log('['+timer.name+'] All slots deactivated - ensuring OFF state');if(timer.offUrl)this.callUrl(timer.offUrl,'OFF',timer.name);lastSlotStates.set('anyActive',false);}else if(anySlotActive&&!wasAnyActive){lastSlotStates.set('anyActive',true);}});}};
 
-const TimerManager={async init(){await DeviceManager.loadDevices();const savedTimers=localStorage.getItem(STORAGE_KEY);const savedActive=localStorage.getItem(ACTIVE_TIMER_KEY);if(savedTimers){try{timers=JSON.parse(savedTimers);if(!Array.isArray(timers)||timers.length===0){DeviceManager.createTimersFromDevices();}else{timers=timers.map(t=>({...t,onUrl:t.onUrl||'',offUrl:t.offUrl||''}));}}catch(e){DeviceManager.createTimersFromDevices();}}else{DeviceManager.createTimersFromDevices();}if(savedActive&&timers.find(t=>t.id===savedActive)){activeTimerId=savedActive;}else{activeTimerId=timers[0].id;}this.loadActiveTimer();this.renderTabs();},save(){localStorage.setItem(STORAGE_KEY,JSON.stringify(timers));localStorage.setItem(ACTIVE_TIMER_KEY,activeTimerId);},saveDebounced(){clearTimeout(saveTimeout);saveTimeout=setTimeout(()=>this.save(),150);},addTimer(){const newId='timer-'+Date.now();const newTimer={id:newId,name:'Timer '+(timers.length+1),onUrl:'',offUrl:'',slots:[],manualMode:false,manualEndTime:null};timers.push(newTimer);this.switchTimer(newId);this.save();this.renderTabs();},deleteTimer(timerId){if(timers.length<=1){alert('Cannot delete the last timer!');return;}if(confirm('Are you sure you want to delete this timer?')){timers=timers.filter(t=>t.id!==timerId);if(activeTimerId===timerId){activeTimerId=timers[0].id;this.loadActiveTimer();}this.save();this.renderTabs();renderList();renderCanvases();}},renameTimer(timerId,newName,onUrl,offUrl){const timer=timers.find(t=>t.id===timerId);if(timer){if(newName.trim()){timer.name=newName.trim();}timer.onUrl=onUrl||'';timer.offUrl=offUrl||'';this.save();this.renderTabs();}},moveTimer(timerId,direction){const currentIndex=timers.findIndex(t=>t.id===timerId);if(currentIndex===-1)return;const newIndex=direction==='up'?currentIndex-1:currentIndex+1;if(newIndex<0||newIndex>=timers.length)return;[timers[currentIndex],timers[newIndex]]=[timers[newIndex],timers[currentIndex]];this.save();this.renderTabs();const tabsScroll=document.getElementById('timerTabs');const activeTab=tabsScroll.querySelector('.timer-tab.active');if(activeTab){activeTab.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});}},switchTimer(timerId){this.saveActiveTimer();activeTimerId=timerId;this.loadActiveTimer();this.save();this.renderTabs();renderList();renderCanvases();updateNextStateChange();ManualControl.update();},saveActiveTimer(){const timer=timers.find(t=>t.id===activeTimerId);if(timer){timer.slots=slots;}},loadActiveTimer(){const timer=timers.find(t=>t.id===activeTimerId);if(timer){slots=timer.slots||[];if(timer.manualMode===undefined){timer.manualMode=false;timer.manualEndTime=null;}if(timer.onUrl===undefined){timer.onUrl='';}if(timer.offUrl===undefined){timer.offUrl='';}}},renderTabs(){timerTabsEl.innerHTML='';const now=new Date();const nowMin=now.getHours()*60+now.getMinutes();const todayJs=now.getDay();timers.forEach((timer,index)=>{const tab=document.createElement('div');tab.className='timer-tab'+(timer.id===activeTimerId?' active':'');let hasActiveSlot=false;if(timer.manualMode){hasActiveSlot=true;}else{const timerSlots=timer.slots||[];hasActiveSlot=timerSlots.some(slot=>{if(!slot.enabled||!isSlotActiveOnDay(slot,todayJs))return false;return TimeUtils.isInSlot(nowMin,slot);});}if(hasActiveSlot){tab.classList.add('slot-active');}const leftBtn=document.createElement('button');leftBtn.className='reorder-btn';leftBtn.innerHTML='◀';leftBtn.disabled=index===0;leftBtn.onclick=(e)=>{e.stopPropagation();this.moveTimer(timer.id,'up');};tab.appendChild(leftBtn);const nameSpan=document.createElement('span');nameSpan.textContent=timer.name;if(timer.deviceInfo){nameSpan.title=timer.deviceInfo.devicename+'\nIP: '+timer.deviceInfo.ip+'\nModule: '+timer.deviceInfo.module;}nameSpan.onclick=()=>{if(timer.id!==activeTimerId){this.switchTimer(timer.id);}};tab.appendChild(nameSpan);const rightBtn=document.createElement('button');rightBtn.className='reorder-btn';rightBtn.innerHTML='▶';rightBtn.disabled=index===timers.length-1;rightBtn.onclick=(e)=>{e.stopPropagation();this.moveTimer(timer.id,'down');};tab.appendChild(rightBtn);timerTabsEl.appendChild(tab);});}};
+// ============================================
+// TIMER MANAGER - LITTLEFS ONLY
+// ============================================
+const TimerManager={
+  async init(){
+    await DeviceManager.loadDevices();
+    
+    // Load from LittleFS ONLY
+    const littleFSData = await LittleFSStorage.load();
+    
+    if(littleFSData && littleFSData.timers && littleFSData.timers.length > 0) {
+      console.log('Loading timers from ESP32 LittleFS...');
+      timers = littleFSData.timers.map(t => ({
+        ...t,
+        onUrl: t.onUrl || '',
+        offUrl: t.offUrl || '',
+        manualMode: t.manualMode || false,
+        manualEndTime: t.manualEndTime || null
+      }));
+      
+      activeTimerId = littleFSData.activeTimerId || timers[0].id;
+    } else {
+      console.log('No saved timers found, creating from devices...');
+      DeviceManager.createTimersFromDevices();
+      // Save initial state to LittleFS
+      await this.save();
+    }
+    
+    if(!timers.find(t => t.id === activeTimerId)) {
+      activeTimerId = timers[0].id;
+    }
+    
+    this.loadActiveTimer();
+    this.renderTabs();
+  },
+  
+  async save(){
+    const data = {
+      version: '2.0',
+      timers: timers,
+      activeTimerId: activeTimerId,
+      savedAt: new Date().toISOString()
+    };
+    
+    const success = await LittleFSStorage.save(data);
+    
+    if(success) {
+      console.log('✓ Settings saved to ESP32 LittleFS');
+    } else {
+      console.warn('✗ Failed to save to LittleFS');
+    }
+  },
+  
+  saveDebounced(){
+    clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(() => this.save(), 500);
+  },
+  
+  addTimer(){
+    const newId='timer-'+Date.now();
+    const newTimer={id:newId,name:'Timer '+(timers.length+1),onUrl:'',offUrl:'',slots:[],manualMode:false,manualEndTime:null};
+    timers.push(newTimer);
+    this.switchTimer(newId);
+    this.save();
+    this.renderTabs();
+  },
+  
+  deleteTimer(timerId){
+    if(timers.length<=1){alert('Cannot delete the last timer!');return;}
+    if(confirm('Are you sure you want to delete this timer?')){
+      timers=timers.filter(t=>t.id!==timerId);
+      if(activeTimerId===timerId){
+        activeTimerId=timers[0].id;
+        this.loadActiveTimer();
+      }
+      this.save();
+      this.renderTabs();
+      renderList();
+      renderCanvases();
+    }
+  },
+  
+  renameTimer(timerId,newName,onUrl,offUrl){
+    const timer=timers.find(t=>t.id===timerId);
+    if(timer){
+      if(newName.trim()){timer.name=newName.trim();}
+      timer.onUrl=onUrl||'';
+      timer.offUrl=offUrl||'';
+      this.save();
+      this.renderTabs();
+    }
+  },
+  
+  moveTimer(timerId,direction){
+    const currentIndex=timers.findIndex(t=>t.id===timerId);
+    if(currentIndex===-1)return;
+    const newIndex=direction==='up'?currentIndex-1:currentIndex+1;
+    if(newIndex<0||newIndex>=timers.length)return;
+    [timers[currentIndex],timers[newIndex]]=[timers[newIndex],timers[currentIndex]];
+    this.save();
+    this.renderTabs();
+    const tabsScroll=document.getElementById('timerTabs');
+    const activeTab=tabsScroll.querySelector('.timer-tab.active');
+    if(activeTab){activeTab.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});}
+  },
+  
+  switchTimer(timerId){
+    this.saveActiveTimer();
+    activeTimerId=timerId;
+    this.loadActiveTimer();
+    this.save();
+    this.renderTabs();
+    renderList();
+    renderCanvases();
+    updateNextStateChange();
+    ManualControl.update();
+  },
+  
+  saveActiveTimer(){
+    const timer=timers.find(t=>t.id===activeTimerId);
+    if(timer){timer.slots=slots;}
+  },
+  
+  loadActiveTimer(){
+    const timer=timers.find(t=>t.id===activeTimerId);
+    if(timer){
+      slots=timer.slots||[];
+      if(timer.manualMode===undefined){timer.manualMode=false;timer.manualEndTime=null;}
+      if(timer.onUrl===undefined){timer.onUrl='';}
+      if(timer.offUrl===undefined){timer.offUrl='';}
+    }
+  },
+  
+  renderTabs(){
+    timerTabsEl.innerHTML='';
+    const now=new Date();
+    const nowMin=now.getHours()*60+now.getMinutes();
+    const todayJs=now.getDay();
+    timers.forEach((timer,index)=>{
+      const tab=document.createElement('div');
+      tab.className='timer-tab'+(timer.id===activeTimerId?' active':'');
+      let hasActiveSlot=false;
+      if(timer.manualMode){hasActiveSlot=true;}else{
+        const timerSlots=timer.slots||[];
+        hasActiveSlot=timerSlots.some(slot=>{
+          if(!slot.enabled||!isSlotActiveOnDay(slot,todayJs))return false;
+          return TimeUtils.isInSlot(nowMin,slot);
+        });
+      }
+      if(hasActiveSlot){tab.classList.add('slot-active');}
+      const leftBtn=document.createElement('button');
+      leftBtn.className='reorder-btn';
+      leftBtn.innerHTML='◀';
+      leftBtn.disabled=index===0;
+      leftBtn.onclick=(e)=>{e.stopPropagation();this.moveTimer(timer.id,'up');};
+      tab.appendChild(leftBtn);
+      const nameSpan=document.createElement('span');
+      nameSpan.textContent=timer.name;
+      if(timer.deviceInfo){nameSpan.title=timer.deviceInfo.devicename+'\nIP: '+timer.deviceInfo.ip+'\nModule: '+timer.deviceInfo.module;}
+      nameSpan.onclick=()=>{if(timer.id!==activeTimerId){this.switchTimer(timer.id);}};
+      tab.appendChild(nameSpan);
+      const rightBtn=document.createElement('button');
+      rightBtn.className='reorder-btn';
+      rightBtn.innerHTML='▶';
+      rightBtn.disabled=index===timers.length-1;
+      rightBtn.onclick=(e)=>{e.stopPropagation();this.moveTimer(timer.id,'down');};
+      tab.appendChild(rightBtn);
+      timerTabsEl.appendChild(tab);
+    });
+  }
+};
 
 function showRenamePopup(timerId){renameTimerId=timerId;const timer=timers.find(t=>t.id===timerId);document.getElementById('renameInput').value=timer?timer.name:'';document.getElementById('onUrlInput').value=timer?timer.onUrl||'':'';document.getElementById('offUrlInput').value=timer?timer.offUrl||'':'';document.getElementById('urlTestStatus').style.display='none';document.getElementById('copyScheduleStatus').style.display='none';const selectEl=document.getElementById('copyScheduleSelect');selectEl.innerHTML='<option value="">-- Select a timer to copy from --</option>';timers.forEach(t=>{if(t.id!==timerId){const option=document.createElement('option');option.value=t.id;option.textContent=t.name;selectEl.appendChild(option);}});document.getElementById('copyScheduleBtn').disabled=true;document.getElementById('renamePopup').classList.add('show');document.getElementById('infoPopupOverlay').classList.add('show');document.getElementById('renameInput').focus();}
 function hideRenamePopup(){document.getElementById('renamePopup').classList.remove('show');document.getElementById('infoPopupOverlay').classList.remove('show');renameTimerId=null;}
@@ -533,7 +765,108 @@ document.getElementById('renameInput').addEventListener('keypress',(e)=>{if(e.ke
 document.getElementById('copyScheduleSelect').addEventListener('change',(e)=>{const selectedTimerId=e.target.value;document.getElementById('copyScheduleBtn').disabled=!selectedTimerId;document.getElementById('copyScheduleStatus').style.display='none';});
 document.getElementById('copyScheduleBtn').addEventListener('click',()=>{const sourceTimerId=document.getElementById('copyScheduleSelect').value;const targetTimerId=renameTimerId;if(!sourceTimerId||!targetTimerId){return;}const sourceTimer=timers.find(t=>t.id===sourceTimerId);const targetTimer=timers.find(t=>t.id===targetTimerId);if(!sourceTimer||!targetTimer){alert('Error: Timer not found');return;}if(confirm('Copy all '+(sourceTimer.slots?.length||0)+' time slot(s) from "'+sourceTimer.name+'" to "'+targetTimer.name+'"?\n\nThis will replace the current schedule.')){targetTimer.slots=JSON.parse(JSON.stringify(sourceTimer.slots||[]));if(targetTimerId===activeTimerId){slots=targetTimer.slots;}TimerManager.save();renderList();renderCanvases();updateNextStateChange();const statusEl=document.getElementById('copyScheduleStatus');statusEl.textContent='✓ Successfully copied '+targetTimer.slots.length+' slot(s) from "'+sourceTimer.name+'"';statusEl.style.background='#10b981';statusEl.style.color='white';statusEl.style.display='block';setTimeout(()=>{statusEl.style.display='none';},3000);}});
 
-const DataManager={saveImmediate(){TimerManager.saveActiveTimer();TimerManager.save();},saveDebounced(){TimerManager.saveActiveTimer();TimerManager.saveDebounced();},export(){TimerManager.saveActiveTimer();jsonDataEl.style.display="block";jsonDataEl.value=JSON.stringify({version:'2.0',timers:timers,exportDate:new Date().toISOString()},null,2);jsonDataEl.select();document.execCommand("copy");alert("Exported ALL timers JSON copied to clipboard.");},import(){const json=jsonDataEl.value.trim();if(!json){alert("Paste JSON first.");return;}try{const data=JSON.parse(json);if(Array.isArray(data)){timers=[{id:'timer-'+Date.now(),name:'Imported Timer',onUrl:'',offUrl:'',slots:data,manualMode:false,manualEndTime:null}];}else if(data.timers&&Array.isArray(data.timers)){timers=data.timers.map(t=>({...t,onUrl:t.onUrl||'',offUrl:t.offUrl||'',manualMode:t.manualMode||false,manualEndTime:t.manualEndTime||null}));}else if(data.version){timers=data.timers.map(t=>({...t,onUrl:t.onUrl||'',offUrl:t.offUrl||''}));}else{throw new Error("Invalid format");}activeTimerId=timers[0].id;TimerManager.loadActiveTimer();TimerManager.save();TimerManager.renderTabs();recalcSunBasedSlots();renderList();renderCanvases();alert('Import successful! Loaded '+timers.length+' timer(s).');}catch(e){alert("Invalid JSON: "+e.message);}},saveToFile(){TimerManager.saveActiveTimer();const data=JSON.stringify({version:'2.0',timers:timers,exportDate:new Date().toISOString()},null,2);const blob=new Blob([data],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;const filenameInput=document.getElementById('filenameInput');let filename=filenameInput.value.trim();if(!filename){const now=new Date();const dateStr=now.toISOString().split('T')[0];filename='all-timers-'+dateStr;}if(!filename.endsWith('.json')){filename+='.json';}a.download=filename;document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);alert('All '+timers.length+' timer(s) saved to file successfully!');},loadFromFile(file){if(!file){alert('Please select a file.');return;}const reader=new FileReader();reader.onload=(e)=>{try{const json=e.target.result;const data=JSON.parse(json);if(Array.isArray(data)){timers=[{id:'timer-'+Date.now(),name:'Imported Timer',onUrl:'',offUrl:'',slots:data.map((s)=>({id:s.id??Date.now(),start:s.start??"06:00",end:s.end??"08:00",enabled:s.enabled!==undefined?s.enabled:true,days:Array.isArray(s.days)?s.days:[true,true,true,true,true,true,true],sunBased:!!s.sunBased,sunEvent:s.sunEvent??"sunrise",sunOffset:s.sunOffset??0,sunDuration:s.sunDuration??60})),manualMode:false,manualEndTime:null}];}else if(data.timers&&Array.isArray(data.timers)){timers=data.timers.map(t=>({...t,onUrl:t.onUrl||'',offUrl:t.offUrl||'',manualMode:t.manualMode||false,manualEndTime:t.manualEndTime||null}));}else if(data.version){timers=data.timers.map(t=>({...t,onUrl:t.onUrl||'',offUrl:t.offUrl||'',manualMode:t.manualMode||false,manualEndTime:t.manualEndTime||null}));}else{throw new Error('Invalid file format');}activeTimerId=timers[0].id;TimerManager.loadActiveTimer();this.saveImmediate();TimerManager.renderTabs();recalcSunBasedSlots();renderList();renderCanvases();updateNextStateChange();alert('Successfully loaded '+timers.length+' timer(s) from file!');}catch(e){alert('Error loading file: '+e.message);}};reader.onerror=()=>{alert('Error reading file.');};reader.readAsText(file);}};
+// ============================================
+// DATA MANAGER - LITTLEFS ONLY
+// ============================================
+const DataManager={
+  async saveImmediate(){
+    TimerManager.saveActiveTimer();
+    await TimerManager.save();
+  },
+  
+  async saveDebounced(){
+    TimerManager.saveActiveTimer();
+    TimerManager.saveDebounced();
+  },
+  
+  export(){
+    TimerManager.saveActiveTimer();
+    jsonDataEl.style.display="block";
+    jsonDataEl.value=JSON.stringify({version:'2.0',timers:timers,exportDate:new Date().toISOString()},null,2);
+    jsonDataEl.select();
+    document.execCommand("copy");
+    alert("Exported ALL timers JSON copied to clipboard.");
+  },
+  
+  async import(){
+    const json=jsonDataEl.value.trim();
+    if(!json){alert("Paste JSON first.");return;}
+    try{
+      const data=JSON.parse(json);
+      if(Array.isArray(data)){
+        timers=[{id:'timer-'+Date.now(),name:'Imported Timer',onUrl:'',offUrl:'',slots:data,manualMode:false,manualEndTime:null}];
+      }else if(data.timers&&Array.isArray(data.timers)){
+        timers=data.timers.map(t=>({...t,onUrl:t.onUrl||'',offUrl:t.offUrl||'',manualMode:t.manualMode||false,manualEndTime:t.manualEndTime||null}));
+      }else if(data.version){
+        timers=data.timers.map(t=>({...t,onUrl:t.onUrl||'',offUrl:t.offUrl||''}));
+      }else{
+        throw new Error("Invalid format");
+      }
+      activeTimerId=timers[0].id;
+      TimerManager.loadActiveTimer();
+      await TimerManager.save();
+      TimerManager.renderTabs();
+      recalcSunBasedSlots();
+      renderList();
+      renderCanvases();
+      alert('Import successful! Loaded '+timers.length+' timer(s).');
+    }catch(e){
+      alert("Invalid JSON: "+e.message);
+    }
+  },
+  
+  saveToFile(){
+    TimerManager.saveActiveTimer();
+    const data=JSON.stringify({version:'2.0',timers:timers,exportDate:new Date().toISOString()},null,2);
+    const blob=new Blob([data],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;
+    const filenameInput=document.getElementById('filenameInput');
+    let filename=filenameInput.value.trim();
+    if(!filename){const now=new Date();const dateStr=now.toISOString().split('T')[0];filename='all-timers-'+dateStr;}
+    if(!filename.endsWith('.json')){filename+='.json';}
+    a.download=filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    alert('All '+timers.length+' timer(s) saved to file successfully!');
+  },
+  
+  async loadFromFile(file){
+    if(!file){alert('Please select a file.');return;}
+    const reader=new FileReader();
+    reader.onload=async (e)=>{
+      try{
+        const json=e.target.result;
+        const data=JSON.parse(json);
+        if(Array.isArray(data)){
+          timers=[{id:'timer-'+Date.now(),name:'Imported Timer',onUrl:'',offUrl:'',slots:data.map((s)=>({id:s.id??Date.now(),start:s.start??"06:00",end:s.end??"08:00",enabled:s.enabled!==undefined?s.enabled:true,days:Array.isArray(s.days)?s.days:[true,true,true,true,true,true,true],sunBased:!!s.sunBased,sunEvent:s.sunEvent??"sunrise",sunOffset:s.sunOffset??0,sunDuration:s.sunDuration??60})),manualMode:false,manualEndTime:null}];
+        }else if(data.timers&&Array.isArray(data.timers)){
+          timers=data.timers.map(t=>({...t,onUrl:t.onUrl||'',offUrl:t.offUrl||'',manualMode:t.manualMode||false,manualEndTime:t.manualEndTime||null}));
+        }else if(data.version){
+          timers=data.timers.map(t=>({...t,onUrl:t.onUrl||'',offUrl:t.offUrl||'',manualMode:t.manualMode||false,manualEndTime:t.manualEndTime||null}));
+        }else{
+          throw new Error('Invalid file format');
+        }
+        activeTimerId=timers[0].id;
+        TimerManager.loadActiveTimer();
+        await this.saveImmediate();
+        TimerManager.renderTabs();
+        recalcSunBasedSlots();
+        renderList();
+        renderCanvases();
+        updateNextStateChange();
+        alert('Successfully loaded '+timers.length+' timer(s) from file!');
+      }catch(e){
+        alert('Error loading file: '+e.message);
+      }
+    };
+    reader.onerror=()=>{alert('Error reading file.');};
+    reader.readAsText(file);
+  }
+};
 
 const CanvasRenderer={drawMarkers(ctx){ctx.textAlign="center";ctx.textBaseline="middle";for(let m=0;m<1440;m+=15){const a=(m/1440)*2*Math.PI-Math.PI/2;let inner,outer,lw;if(m%60===0){inner=RADIUS-8;outer=RADIUS+8;lw=2;}else if(m%30===0){inner=RADIUS-8;outer=RADIUS+3;lw=1;}else{inner=RADIUS-8;outer=RADIUS;lw=0.5;}const x1=CENTER_X+Math.cos(a)*inner;const y1=CENTER_Y+Math.sin(a)*inner;const x2=CENTER_X+Math.cos(a)*outer;const y2=CENTER_Y+Math.sin(a)*outer;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.strokeStyle="#aaa";ctx.lineWidth=lw;ctx.stroke();}ctx.font="11px sans-serif";ctx.fillStyle="#ccc";for(let h=0;h<24;h++){const a=(h*60)/1440*2*Math.PI-Math.PI/2;const tx=CENTER_X+Math.cos(a)*(RADIUS+16);const ty=CENTER_Y+Math.sin(a)*(RADIUS+16);const display=is24HourFormat?h:((h%12)||12);ctx.fillText(display.toString(),tx,ty);}},drawDayNight(ctx){const sr=TimeUtils.toMin(sunrise);const ss=TimeUtils.toMin(sunset);const a1=(sr/1440)*2*Math.PI-Math.PI/2;const a2=(ss/1440)*2*Math.PI-Math.PI/2;ctx.beginPath();ctx.arc(CENTER_X,CENTER_Y,RADIUS-25,0,2*Math.PI);ctx.strokeStyle="#1e3a8a";ctx.lineWidth=10;ctx.stroke();ctx.beginPath();if(sr<ss){ctx.arc(CENTER_X,CENTER_Y,RADIUS-25,a1,a2);}else{ctx.arc(CENTER_X,CENTER_Y,RADIUS-25,a1,1.5*Math.PI);ctx.arc(CENTER_X,CENTER_Y,RADIUS-25,-Math.PI/2,a2);}ctx.strokeStyle="#fbbf24";ctx.lineWidth=10;ctx.stroke();},drawCurvedText(ctx,text,radius,startAngle,endAngle){ctx.save();ctx.fillStyle="#ccc";ctx.font="11px sans-serif";ctx.textAlign="center";ctx.textBaseline="middle";const angleRange=endAngle-startAngle;const midAngle=startAngle+angleRange/2;const textSpan=angleRange*0.6;const textStartAngle=midAngle-textSpan/2;for(let i=0;i<text.length;i++){const charAngle=textStartAngle+(textSpan*(i+0.5))/text.length;ctx.save();ctx.translate(CENTER_X,CENTER_Y);ctx.rotate(charAngle+Math.PI/2);ctx.fillText(text[i],0,-radius);ctx.restore();}ctx.restore();},drawCircle(canvas,dayIndex){const ctx=canvas.getContext("2d",{alpha:false});if(!canvas._doubleBuffer){canvas._doubleBuffer=document.createElement('canvas');canvas._doubleBuffer.width=CANVAS_WIDTH;canvas._doubleBuffer.height=CANVAS_HEIGHT;}const bufferCtx=canvas._doubleBuffer.getContext("2d",{alpha:false});bufferCtx.clearRect(0,0,CANVAS_WIDTH,CANVAS_HEIGHT);bufferCtx.beginPath();bufferCtx.arc(CENTER_X,CENTER_Y,RADIUS,0,2*Math.PI);bufferCtx.strokeStyle="#e0e0e0";bufferCtx.lineWidth=20;bufferCtx.stroke();this.drawDayNight(bufferCtx);const now=new Date();const nowMin=now.getHours()*60+now.getMinutes();const todayJs=now.getDay();let anyActive=false;slots.forEach((slot)=>{if(!slot.enabled||!isSlotActiveOnDay(slot,dayIndex))return;const s=TimeUtils.toMin(slot.start);const e=TimeUtils.toMin(slot.end);const isNow=dayIndex===todayJs&&TimeUtils.isInSlot(nowMin,slot);if(isNow)anyActive=true;const color=isNow?"limegreen":"red";const a1=(s/1440)*2*Math.PI-Math.PI/2;const a2=(e/1440)*2*Math.PI-Math.PI/2;bufferCtx.beginPath();if(s<e){bufferCtx.arc(CENTER_X,CENTER_Y,RADIUS,a1,a2);}else{bufferCtx.arc(CENTER_X,CENTER_Y,RADIUS,a1,1.5*Math.PI);bufferCtx.arc(CENTER_X,CENTER_Y,RADIUS,-Math.PI/2,a2);}bufferCtx.strokeStyle=color;bufferCtx.lineWidth=20;bufferCtx.stroke();});const timer=timers.find(t=>t.id===activeTimerId);if(timer&&timer.manualMode&&dayIndex===todayJs){anyActive=true;bufferCtx.beginPath();bufferCtx.arc(CENTER_X,CENTER_Y,RADIUS-10,0,2*Math.PI);bufferCtx.strokeStyle="limegreen";bufferCtx.lineWidth=5;bufferCtx.stroke();}this.drawMarkers(bufferCtx);if(dayIndex===todayJs){const a=(nowMin/1440)*2*Math.PI-Math.PI/2;const x1=CENTER_X+Math.cos(a)*35;const y1=CENTER_Y+Math.sin(a)*35;const x2=CENTER_X+Math.cos(a)*RADIUS;const y2=CENTER_Y+Math.sin(a)*RADIUS;bufferCtx.beginPath();bufferCtx.moveTo(x1,y1);bufferCtx.lineTo(x2,y2);bufferCtx.strokeStyle=anyActive?"limegreen":"red";bufferCtx.lineWidth=3;bufferCtx.stroke();}const labelRadius=RADIUS-15;this.drawCurvedText(bufferCtx,"Night",labelRadius,-Math.PI/2,0);this.drawCurvedText(bufferCtx,"Morning",labelRadius,0,Math.PI/2);this.drawCurvedText(bufferCtx,"Afternoon",labelRadius,Math.PI/2,Math.PI);this.drawCurvedText(bufferCtx,"Evening",labelRadius,Math.PI,3*Math.PI/2);ctx.clearRect(0,0,CANVAS_WIDTH,CANVAS_HEIGHT);ctx.drawImage(canvas._doubleBuffer,0,0);}};
 
