@@ -1,5 +1,5 @@
 /*
- * Tasmota Network Scanner - Modified Version
+ * Tasmota Network Scanner - Modified Version with Timer Settings Storage
  * 
  * LIBRARY COMPATIBILITY NOTES:
  * - This sketch uses DynamicJsonDocument for ArduinoJson v6 compatibility
@@ -1674,6 +1674,91 @@ void setup() {
     }
   });
   
+  // === TIMER SETTINGS API ENDPOINTS ===
+  
+  // GET timer settings from LittleFS
+  server.on("/api/timer/settings", HTTP_GET, [](AsyncWebServerRequest *request) {
+    if (auth_enabled) {
+      if (!request->authenticate(auth_username.c_str(), auth_password.c_str())) {
+        return request->requestAuthentication();
+      }
+    }
+    
+    if (!LittleFS.exists("/timer_settings.json")) {
+      request->send(200, "application/json", "{}");
+      return;
+    }
+    
+    File file = LittleFS.open("/timer_settings.json", "r");
+    if (!file) {
+      request->send(500, "text/plain", "Failed to open file");
+      return;
+    }
+    
+    request->send(LittleFS, "/timer_settings.json", "application/json");
+    file.close();
+  });
+  
+  // POST timer settings to LittleFS (using body handler)
+  server.on("/api/timer/settings", HTTP_POST, 
+    [](AsyncWebServerRequest *request) {
+      request->send(200);
+    },
+    NULL,
+    [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
+      if (auth_enabled) {
+        if (!request->authenticate(auth_username.c_str(), auth_password.c_str())) {
+          return;
+        }
+      }
+      
+      static String jsonBuffer;
+      
+      if (index == 0) {
+        jsonBuffer = "";
+        jsonBuffer.reserve(total);
+      }
+      
+      for (size_t i = 0; i < len; i++) {
+        jsonBuffer += (char)data[i];
+      }
+      
+      if (index + len == total) {
+        // Validate JSON before saving
+        JsonDocument doc;
+        DeserializationError error = deserializeJson(doc, jsonBuffer);
+        
+        if (error) {
+          Serial.print(F("Invalid timer settings JSON: "));
+          Serial.println(error.c_str());
+          request->send(400, "text/plain", "Invalid JSON");
+          jsonBuffer = "";
+          return;
+        }
+        
+        // Save to file
+        File file = LittleFS.open("/timer_settings.json", "w");
+        if (!file) {
+          Serial.println(F("Failed to open timer_settings.json for writing"));
+          request->send(500, "text/plain", "Failed to open file for writing");
+          jsonBuffer = "";
+          return;
+        }
+        
+        file.print(jsonBuffer);
+        file.close();
+        
+        Serial.println(F("Timer settings saved to LittleFS"));
+        Serial.print(F("Size: "));
+        Serial.print(jsonBuffer.length());
+        Serial.println(F(" bytes"));
+        
+        request->send(200, "text/plain", "Settings saved successfully");
+        jsonBuffer = "";
+      }
+    }
+  );
+  
   // List directory endpoint for ace.html
   server.on("/list", HTTP_GET, [](AsyncWebServerRequest *request) {
     if (auth_enabled) {
@@ -1872,6 +1957,7 @@ void setup() {
   Serial.println(F("HTTP server started"));
   Serial.print(F("Open browser: http://"));
   Serial.println(WiFi.localIP().toString());
+  Serial.println(F("Timer Settings API: /api/timer/settings"));
   Serial.println(F("======================================\n"));
   
   esp_task_wdt_reset();
