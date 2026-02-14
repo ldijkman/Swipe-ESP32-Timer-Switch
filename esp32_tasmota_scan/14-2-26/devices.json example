@@ -1,0 +1,66 @@
+{
+  "devices": [
+    {
+      "ip": "10.10.100.124",
+      "devicename": "Keuken WCD1",
+      "friendlyname": "Keuken WCD1",
+      "module": "Athom Plug V2"
+    },
+    {
+      "ip": "10.10.100.104",
+      "devicename": "Keuken Raam",
+      "friendlyname": "Keuken",
+      "module": "Sonoff Basic"
+    },
+    {
+      "ip": "10.10.100.112",
+      "devicename": "Kamer Grote Hanglamp",
+      "friendlyname": "Kamer",
+      "module": "ESP32C3"
+    },
+    {
+      "ip": "10.10.100.125",
+      "devicename": "WCD",
+      "friendlyname": "Televisie",
+      "module": "Athom Plug V3"
+    },
+    {
+      "ip": "10.10.100.111",
+      "devicename": "Kamer Raam",
+      "friendlyname": "Kamer",
+      "module": "Sonoff Basic"
+    },
+    {
+      "ip": "10.10.100.114",
+      "devicename": "Plafond LED",
+      "friendlyname": "VoorKamer",
+      "module": "Sonoff Basic"
+    },
+    {
+      "ip": "10.10.100.122",
+      "devicename": "WCD LED oost",
+      "friendlyname": "VoorKamer",
+      "module": "Athom Plug V3"
+    },
+    {
+      "ip": "10.10.100.118",
+      "devicename": "Grond",
+      "friendlyname": "Kamer",
+      "module": "Sonoff Basic R4"
+    },
+    {
+      "ip": "10.10.100.123",
+      "devicename": "WCD LED west",
+      "friendlyname": "VoorKamer",
+      "module": "Athom Plug V2"
+    },
+    {
+      "ip": "10.10.100.108",
+      "devicename": "Keuken LED",
+      "friendlyname": "Keuken led",
+      "module": "ESP32C3"
+    }
+  ],
+  "total": 10,
+  "timestamp": 266937
+}
