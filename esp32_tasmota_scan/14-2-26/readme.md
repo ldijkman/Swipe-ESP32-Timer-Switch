@@ -11,7 +11,7 @@ ace.html for easy edit view upload (ace now shows devices.json as pretty print, 
 
 ---
 
-only forward esp32 ip to internet to controll all tasmota devices on local wifi
+only forward 1 esp32 ip to internet to controll all tasmota devices on local wifi from anywhere
 
 password on control web page
 
