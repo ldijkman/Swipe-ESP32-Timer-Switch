@@ -44,3 +44,11 @@ timer.html should read/write timer settings to littlefs
 <img width="1024" height="768" alt="Screenshot from 2026-01-26 19-49-43" src="https://github.com/user-attachments/assets/ae9e059a-5d4a-400c-84fe-c495ae818f2a" />
 <img width="1024" height="768" alt="Screenshot from 2026-01-26 19-49-29" src="https://github.com/user-attachments/assets/7417d65f-37de-4758-937e-7ee60a953631" />
 
+
+
+---
+
+timers json saved to littlefs
+
+<img width="1024" height="768" alt="Screenshot from 2026-02-14 11-48-25" src="https://github.com/user-attachments/assets/f82a163f-ef0a-476a-ab84-9b885d00be86" />
+
