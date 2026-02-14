@@ -4,9 +4,9 @@ experimental Ai play, i use Claude.Ai
 
 an esp32 scans local wifi network for tasmota devices
 
-write discovered to devices json on litlefs
+write discovered to devices.json on litlefs
 
-esp32 reads on reboot devices.json for list to use
+esp32 reads on reboot devices.json for list to use on webpage served
 
 timer.html reads devices.json (but not all functional)
 
