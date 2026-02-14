@@ -30,6 +30,8 @@ every change a lot of challenges
 
 timer.html  read/write timer settings.json to littlefs
 
+esp32 should read timersettings.json and act on times set, not control from timer html
+
 
 ---
 
