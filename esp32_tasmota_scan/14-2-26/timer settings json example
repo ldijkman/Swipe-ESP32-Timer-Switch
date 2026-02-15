@@ -3,62 +3,30 @@
   "timers": [
     {
       "id": "device-10-10-100-122",
-      "name": "VoorKamer",
+      "name": "VoorKamer oost",
       "deviceInfo": {
         "ip": "10.10.100.122",
         "devicename": "WCD LED oost",
-        "friendlyname": "VoorKamer",
+        "friendlyname": "VoorKamer oost",
         "module": "Athom Plug V3"
       },
       "onUrl": "http://10.10.100.122/cm?cmnd=Power%20ON",
       "offUrl": "http://10.10.100.122/cm?cmnd=Power%20OFF",
-      "slots": [
-        {
-          "id": 1771066018285,
-          "start": "11:46",
-          "end": "13:48",
-          "enabled": true,
-          "days": [
-            true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            true
-          ],
-          "sunBased": false
-        }
-      ],
-      "manualMode": false,
-      "manualEndTime": null
-    },
-    {
-      "id": "device-10-10-100-111",
-      "name": "Kamer",
-      "deviceInfo": {
-        "ip": "10.10.100.111",
-        "devicename": "Kamer Raam",
-        "friendlyname": "Kamer",
-        "module": "Sonoff Basic"
-      },
-      "onUrl": "http://10.10.100.111/cm?cmnd=Power%20ON",
-      "offUrl": "http://10.10.100.111/cm?cmnd=Power%20OFF",
       "slots": [],
       "manualMode": false,
       "manualEndTime": null
     },
     {
-      "id": "device-10-10-100-112",
-      "name": "Kamer",
+      "id": "device-10-10-100-111",
+      "name": "Kamer raam",
       "deviceInfo": {
-        "ip": "10.10.100.112",
-        "devicename": "Kamer Grote Hanglamp",
-        "friendlyname": "Kamer",
-        "module": "ESP32C3"
+        "ip": "10.10.100.111",
+        "devicename": "Kamer Raam",
+        "friendlyname": "Kamer raam",
+        "module": "Sonoff Basic"
       },
-      "onUrl": "http://10.10.100.112/on",
-      "offUrl": "http://10.10.100.112/off",
+      "onUrl": "http://10.10.100.111/cm?cmnd=Power%20ON",
+      "offUrl": "http://10.10.100.111/cm?cmnd=Power%20OFF",
       "slots": [],
       "manualMode": false,
       "manualEndTime": null
@@ -74,6 +42,21 @@
       },
       "onUrl": "http://10.10.100.123/cm?cmnd=Power%20ON",
       "offUrl": "http://10.10.100.123/cm?cmnd=Power%20OFF",
+      "slots": [],
+      "manualMode": false,
+      "manualEndTime": null
+    },
+    {
+      "id": "device-10-10-100-112",
+      "name": "Kamer",
+      "deviceInfo": {
+        "ip": "10.10.100.112",
+        "devicename": "Kamer Grote Hanglamp",
+        "friendlyname": "Kamer",
+        "module": "ESP32C3"
+      },
+      "onUrl": "http://10.10.100.112/on",
+      "offUrl": "http://10.10.100.112/off",
       "slots": [],
       "manualMode": false,
       "manualEndTime": null
@@ -98,7 +81,7 @@
       "name": "Televisie",
       "deviceInfo": {
         "ip": "10.10.100.125",
-        "devicename": "WCD",
+        "devicename": "Televisie WCD",
         "friendlyname": "Televisie",
         "module": "Athom Plug V3"
       },
@@ -110,11 +93,11 @@
     },
     {
       "id": "device-10-10-100-114",
-      "name": "VoorKamer",
+      "name": "Plafond LED",
       "deviceInfo": {
         "ip": "10.10.100.114",
         "devicename": "Plafond LED",
-        "friendlyname": "VoorKamer",
+        "friendlyname": "Plafond LED",
         "module": ""
       },
       "onUrl": "http://10.10.100.114/on",
@@ -185,5 +168,5 @@
     }
   ],
   "activeTimerId": "device-10-10-100-122",
-  "savedAt": "2026-02-14T10:47:57.847Z"
+  "savedAt": "2026-02-15T08:42:35.039Z"
 }
